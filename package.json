@@ -17,7 +17,7 @@
   "files": [
     "dist/*"
   ],
-  "repository": "https://github.com/o2ter/divermeter.git",
+  "repository": "https://github.com/o2ter/ai-chain.git",
   "author": "Susan Cheng <susan.doggie@gmail.com>",
   "license": "MIT",
   "scripts": {
