@@ -73,7 +73,32 @@ export class OllamaProvider extends ClientProvider {
 
     const params = {
       model,
-      messages,
+      messages: messages.map(msg => {
+        const { role, content } = msg;
+        switch (role) {
+          case 'system':
+          case 'user':
+            return { role, content } as const;
+          case 'assistant':
+            return {
+              role,
+              content,
+              thinking: msg.reasoning,
+              tool_calls: msg.tool_calls?.map(call => ({
+                function: {
+                  name: call.name,
+                  arguments: call.arguments,
+                },
+              }) as const),
+            } as const;
+          case 'tool':
+            return {
+              role,
+              content,
+              tool_name: msg.tool_call_id,
+            } as const;
+        }
+      }),
       tools: tools ? _.map(tools, tool => ({
         type: 'function',
         function: {
@@ -98,7 +123,7 @@ export class OllamaProvider extends ClientProvider {
         let usage;
         const calls: {
           name: string;
-          arguments: string;
+          arguments: any;
         }[] = [];
 
         for await (const { message: { content, thinking, tool_calls }, ...data } of response) {
@@ -107,8 +132,8 @@ export class OllamaProvider extends ClientProvider {
           if (tool_calls) {
             for (const [index, { function: call }] of tool_calls.entries()) {
               calls[index] = {
-                name: `${calls[index]?.name ?? ''}${call?.name ?? ''}`,
-                arguments: `${calls[index]?.arguments ?? ''}${call?.arguments ?? ''}`,
+                name: call?.name ?? calls[index]?.name ?? '',
+                arguments: call?.arguments ?? calls[index]?.arguments ?? {},
               };
             }
           }
@@ -123,8 +148,9 @@ export class OllamaProvider extends ClientProvider {
         if (!_.isEmpty(calls)) {
           yield {
             tool_calls: calls.map(call => ({
+              id: call.name,
               name: call.name,
-              arguments: JSON.parse(call.arguments),
+              arguments: call.arguments,
             })),
           };
         }
@@ -144,6 +170,7 @@ export class OllamaProvider extends ClientProvider {
           content: response.message.content,
           reasoning: response.message.thinking,
           tool_calls: response.message.tool_calls?.map(call => ({
+            id: call.function.name,
             name: call.function.name,
             arguments: call.function.arguments,
           })),

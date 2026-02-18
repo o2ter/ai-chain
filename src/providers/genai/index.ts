@@ -78,9 +78,20 @@ export class GoogleGenAIProvider extends ClientProvider {
     const systemInstruction = messages.filter(message => message.role === 'system');
     const params = {
       model,
-      contents: messages.map(message => ({
-        role: message.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: message.content }],
+      contents: _.compact(messages.map(msg => {
+        const { role, content } = msg;
+        switch (role) {
+          case 'user':
+            return {
+              role: 'user',
+              parts: [{ text: content }],
+            };
+          case 'assistant':
+            return {
+              role: 'model',
+              parts: [{ text: content }],
+            };
+        }
       })),
       config: {
         systemInstruction: systemInstruction.map(message => message.content),

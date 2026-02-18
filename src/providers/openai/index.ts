@@ -63,7 +63,34 @@ export class OpenAIProvider extends ClientProvider {
 
     const params = {
       model,
-      messages,
+      messages: messages.map(msg => {
+        const { role, content } = msg;
+        switch (role) {
+          case 'system':
+          case 'user':
+            return { role, content } as const;
+          case 'assistant':
+            return {
+              role,
+              content,
+              thinking: msg.reasoning,
+              tool_calls: msg.tool_calls?.map(call => ({
+                id: call.id,
+                type: 'function',
+                function: {
+                  name: call.name,
+                  arguments: JSON.stringify(call.arguments),
+                },
+              }) as const),
+            } as const;
+          case 'tool':
+            return {
+              role,
+              content,
+              tool_call_id: msg.tool_call_id,
+            } as const;
+        }
+      }),
       tools: tools ? _.map(tools, tool => ({
         type: 'function',
         function: {
