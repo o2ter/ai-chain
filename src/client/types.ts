@@ -58,6 +58,7 @@ type ChatContent = {
   content: string;
   reasoning?: string;
   tool_calls?: {
+    id?: string;
     name: string;
     arguments: any;
   }[];

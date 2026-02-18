@@ -90,6 +90,7 @@ export class OpenAIProvider extends ClientProvider {
 
         let usage;
         const calls: {
+          id?: string;
           name: string;
           arguments: string;
         }[] = [];
@@ -98,9 +99,10 @@ export class OpenAIProvider extends ClientProvider {
           if (content) yield { content };
           if (usage) usage = _usage;
           if (tool_calls) {
-            for (const { type, index, function: call } of tool_calls) {
+            for (const { type, index, id, function: call } of tool_calls) {
               if (type === 'function') {
                 calls[index] = {
+                  id: id,
                   name: `${calls[index]?.name ?? ''}${call?.name ?? ''}`,
                   arguments: `${calls[index]?.arguments ?? ''}${call?.arguments ?? ''}`,
                 };
@@ -111,6 +113,7 @@ export class OpenAIProvider extends ClientProvider {
         if (!_.isEmpty(calls)) {
           yield {
             tool_calls: calls.map(call => ({
+              id: call.id,
               name: call.name,
               arguments: JSON.parse(call.arguments),
             })),
@@ -141,6 +144,7 @@ export class OpenAIProvider extends ClientProvider {
         return {
           content: message?.content ?? '',
           tool_calls: message?.tool_calls?.flatMap(call => call.type === 'function' ? ({
+            id: call.id,
             name: call.function.name,
             arguments: JSON.parse(call.function.arguments),
           }) : []),

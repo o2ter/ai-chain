@@ -106,6 +106,7 @@ export class GoogleGenAIProvider extends ClientProvider {
 
         let usage;
         const calls: {
+          id?: string;
           name: string;
           arguments: any;
         }[] = [];
@@ -116,6 +117,7 @@ export class GoogleGenAIProvider extends ClientProvider {
           if (functionCalls) {
             for (const [index, call] of functionCalls.entries()) {
               calls[index] = {
+                id: call.id,
                 name: call.name ?? calls[index]?.name ?? '',
                 arguments: call.args ?? calls[index]?.arguments ?? {},
               };
@@ -156,6 +158,7 @@ export class GoogleGenAIProvider extends ClientProvider {
         return {
           content: response.text ?? '',
           tool_calls: response.functionCalls?.map(call => ({
+            id: call.id,
             name: call.name,
             arguments: call.args,
           })),
