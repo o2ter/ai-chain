@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "allowJs": true,
+    "maxNodeModuleJsDepth": 1,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "declaration": false,
+    "outDir": "dist",
+    "moduleResolution": "bundler",
+    "allowSyntheticDefaultImports": true,
+    "downlevelIteration": true,
+    "stripInternal": true
+  },
+  "exclude": [
+    "**/dist/*",
+    "**/node_modules/*"
+  ]
+}

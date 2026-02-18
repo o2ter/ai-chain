@@ -1,0 +1,48 @@
+{
+  "name": "@o2ter/ai-chain",
+  "version": "1.0.0",
+  "main": "dist/index",
+  "module": "dist/index",
+  "types": "dist/index",
+  "exports": {
+    ".": {
+      "types": "./dist/index.mjs",
+      "default": "./dist/index"
+    },
+    "./*": {
+      "types": "./dist/*.mjs",
+      "default": "./dist/*"
+    }
+  },
+  "files": [
+    "dist/*"
+  ],
+  "repository": "https://github.com/o2ter/divermeter.git",
+  "author": "Susan Cheng <susan.doggie@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "clean": "rm -rf ./dist/*",
+    "rollup": "yarn clean && rollup -c",
+    "start": "npx frosty run -d -w"
+  },
+  "dependencies": {
+    "lodash": "^4.17.21",
+    "ollama": "^0.6.3",
+    "openai": "^6.22.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.0",
+    "@babel/preset-env": "^7.28.0",
+    "@babel/preset-typescript": "^7.27.1",
+    "@rollup/plugin-babel": "^6.0.4",
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "@types/lodash": "^4.17.16",
+    "rollup": "^4.22.4",
+    "rollup-plugin-dts": "^6.1.1",
+    "tslib": "^2.8.1",
+    "typescript": "^5.9.2"
+  }
+}
