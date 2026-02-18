@@ -28,6 +28,8 @@ import { Ollama, Config } from 'ollama';
 import { ClientProvider } from '../../client/provider';
 import { ChatOptions, ChatResponse, EmbedOptions } from '../../client/types';
 
+type OllamaChatConfig = Parameters<Ollama['chat']>[0];
+
 export class OllamaProvider extends ClientProvider {
 
   client: Ollama;
@@ -37,20 +39,23 @@ export class OllamaProvider extends ClientProvider {
     this.client = new Ollama(options);
   }
 
-  async models() {
+  async* models() {
     const { models } = await this.client.list();
-    return models.map(model => ({
-      name: model.name,
-    }));
+    for (const model of models) {
+      yield { name: model.name };
+    }
   }
 
   async embeddings(options: EmbedOptions) {
     const {
       embeddings,
       prompt_eval_count,
-    } = await this.client.embed(options);
+    } = await this.client.embed({
+      truncate: true,
+      ...options
+    });
     return {
-      embeddings,
+      embeddings: embeddings.map(values => ({ values })),
       usage: {
         prompt_tokens: prompt_eval_count,
         total_tokens: prompt_eval_count,
@@ -64,7 +69,7 @@ export class OllamaProvider extends ClientProvider {
     tools,
     stream,
     ...options
-  }: Omit<Parameters<Ollama['chat']>[0], keyof ChatOptions<S>> & ChatOptions<S>) {
+  }: Omit<OllamaChatConfig, keyof ChatOptions<S>> & ChatOptions<S>) {
 
     const params = {
       model,
@@ -96,8 +101,7 @@ export class OllamaProvider extends ClientProvider {
           arguments: string;
         }[] = [];
 
-        for await (const part of response) {
-          const { message: { content, thinking, tool_calls }, ...rest } = part;
+        for await (const { message: { content, thinking, tool_calls }, ...data } of response) {
           if (content) yield { content: content };
           if (thinking) yield { reasoning: thinking };
           if (tool_calls) {
@@ -108,11 +112,11 @@ export class OllamaProvider extends ClientProvider {
               };
             }
           }
-          if (!_.isNil(rest.prompt_eval_count) || !_.isNil(rest.eval_count)) {
+          if (!_.isNil(data.prompt_eval_count) || !_.isNil(data.eval_count)) {
             usage = {
-              prompt_tokens: rest.prompt_eval_count ?? 0,
-              completion_tokens: rest.eval_count ?? 0,
-              total_tokens: (rest.prompt_eval_count ?? 0) + (rest.eval_count ?? 0),
+              prompt_tokens: data.prompt_eval_count ?? 0,
+              completion_tokens: data.eval_count ?? 0,
+              total_tokens: (data.prompt_eval_count ?? 0) + (data.eval_count ?? 0),
             };
           }
         }

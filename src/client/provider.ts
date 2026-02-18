@@ -28,7 +28,7 @@ import { ChatOptions, ChatResponse, EmbedOptions, EmbedResponse } from './types'
 
 export abstract class ClientProvider {
 
-  abstract models(): Promise<{ name: string; }[]>;
+  abstract models(): AsyncIterable<{ name: string }>;
 
   abstract embeddings(options: EmbedOptions): Promise<EmbedResponse>;
 

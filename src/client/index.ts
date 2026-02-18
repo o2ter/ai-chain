@@ -27,10 +27,12 @@ import _ from 'lodash';
 import { OpenAIProvider } from '../providers/openai';
 import { OllamaProvider } from '../providers/ollama';
 import { EmbedOptions } from './types';
+import { GoogleGenAIProvider } from '../providers/genai';
 
 const providers = {
   'openai': OpenAIProvider,
   'ollama': OllamaProvider,
+  'google-genai': GoogleGenAIProvider,
 } as const;
 
 type Providers = typeof providers;

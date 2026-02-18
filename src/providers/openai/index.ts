@@ -28,6 +28,8 @@ import OpenAI, { ClientOptions } from 'openai';
 import { ClientProvider } from '../../client/provider';
 import { ChatOptions, ChatResponse, EmbedOptions } from '../../client/types';
 
+type OpenAIChatConfig = Parameters<OpenAI['chat']['completions']['create']>[0];
+
 export class OpenAIProvider extends ClientProvider {
 
   client: OpenAI;
@@ -37,20 +39,16 @@ export class OpenAIProvider extends ClientProvider {
     this.client = new OpenAI(options);
   };
 
-  async models() {
-    const models = [];
+  async* models() {
     for await (const model of this.client.models.list()) {
-      models.push({
-        name: model.id,
-      });
+      yield { name: model.id };
     }
-    return models;
   }
 
   async embeddings(options: EmbedOptions) {
     const { data, usage } = await this.client.embeddings.create(options);
     return {
-      embeddings: data.toSorted((a, b) => a.index - b.index).map(item => item.embedding),
+      embeddings: data.toSorted((a, b) => a.index - b.index).map(item => ({ values: item.embedding })),
       usage,
     };
   }
@@ -61,7 +59,7 @@ export class OpenAIProvider extends ClientProvider {
     tools,
     stream,
     ...options
-  }: Omit<Parameters<OpenAI['chat']['completions']['create']>[0], keyof ChatOptions<S>> & ChatOptions<S>) {
+  }: Omit<OpenAIChatConfig, keyof ChatOptions<S>> & ChatOptions<S>) {
 
     const params = {
       model,
@@ -96,8 +94,7 @@ export class OpenAIProvider extends ClientProvider {
           arguments: string;
         }[] = [];
 
-        for await (const part of response) {
-          const { choices: [{ delta: { content, tool_calls } }] = [], usage: _usage } = part;
+        for await (const { choices: [{ delta: { content, tool_calls } }] = [], usage: _usage } of response) {
           if (content) yield { content };
           if (usage) usage = _usage;
           if (tool_calls) {
@@ -119,7 +116,15 @@ export class OpenAIProvider extends ClientProvider {
             })),
           };
         }
-        if (usage) yield { usage };
+        if (usage) yield {
+          usage: {
+            completion_tokens: usage?.completion_tokens,
+            prompt_tokens: usage?.prompt_tokens,
+            total_tokens: usage?.total_tokens,
+            reasoning_tokens: usage?.completion_tokens_details?.reasoning_tokens,
+            cached_tokens: usage?.prompt_tokens_details?.cached_tokens,
+          },
+        };
 
       })() as ChatResponse<S>;
 
@@ -139,7 +144,13 @@ export class OpenAIProvider extends ClientProvider {
             name: call.function.name,
             arguments: JSON.parse(call.function.arguments),
           }) : []),
-          usage,
+          usage: {
+            completion_tokens: usage?.completion_tokens,
+            prompt_tokens: usage?.prompt_tokens,
+            total_tokens: usage?.total_tokens,
+            reasoning_tokens: usage?.completion_tokens_details?.reasoning_tokens,
+            cached_tokens: usage?.prompt_tokens_details?.cached_tokens,
+          },
         };
 
       })() as ChatResponse<S>;

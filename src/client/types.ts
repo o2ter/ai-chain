@@ -30,7 +30,10 @@ export type EmbedOptions = {
 };
 
 export type EmbedResponse = {
-  embeddings: number[][];
+  embeddings: {
+    values: number[];
+    truncated?: boolean;
+   }[];
   usage?: {
     prompt_tokens: number;
     total_tokens: number;
@@ -62,12 +65,8 @@ type ChatContent = {
     completion_tokens: number;
     prompt_tokens: number;
     total_tokens: number;
-    completion_tokens_details?: {
-      reasoning_tokens?: number;
-    };
-    prompt_tokens_details?: {
-      cached_tokens?: number;
-    };
+    reasoning_tokens?: number;
+    cached_tokens?: number;
   };
 };
 
