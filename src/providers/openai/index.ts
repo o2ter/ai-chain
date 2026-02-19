@@ -28,6 +28,8 @@ import OpenAI, { ClientOptions } from 'openai';
 import { ClientProvider } from '../../client/provider';
 import { ChatOptions, EmbedOptions } from '../../client/types';
 
+type OpenAIEmbedConfig = Omit<Parameters<OpenAI['embeddings']['create']>[0], keyof EmbedOptions> & EmbedOptions;
+
 type _OpenAIChatConfig = Parameters<OpenAI['chat']['completions']['create']>[0];
 type OpenAIChatConfig = Omit<_OpenAIChatConfig, keyof ChatOptions | 'stream'> & ChatOptions;
 
@@ -46,8 +48,8 @@ export class OpenAIProvider extends ClientProvider {
     }
   }
 
-  async embeddings(options: Parameters<OpenAI['embeddings']['create']>[0]) {
-    const { data, usage } = await this.client.embeddings.create(options);
+  async embeddings({ signal, ...options }: OpenAIEmbedConfig) {
+    const { data, usage } = await this.client.embeddings.create(options, { signal });
     return {
       embeddings: data.toSorted((a, b) => a.index - b.index).map(item => ({ values: item.embedding })),
       usage,
@@ -102,11 +104,11 @@ export class OpenAIProvider extends ClientProvider {
     };
   }
 
-  async chat(options: OpenAIChatConfig) {
+  async chat({ signal, ...options }: OpenAIChatConfig) {
 
     const response = await this.client.chat.completions.create({
       ...this.#createChatParams(options),
-    });
+    }, { signal });
 
     const { choices: [{ message }] = [], usage } = response;
 
@@ -127,7 +129,7 @@ export class OpenAIProvider extends ClientProvider {
     };
   }
 
-  async* chatStream(options: OpenAIChatConfig) {
+  async* chatStream({ signal, ...options }: OpenAIChatConfig) {
 
     const response = await this.client.chat.completions.create({
       stream: true,
@@ -135,7 +137,7 @@ export class OpenAIProvider extends ClientProvider {
         include_usage: true,
       },
       ...this.#createChatParams(options),
-    });
+    }, { signal });
 
     let usage;
     const calls: {

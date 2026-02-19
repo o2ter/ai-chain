@@ -48,11 +48,12 @@ export class GoogleGenAIProvider extends ClientProvider {
     }
   }
 
-  async embeddings({ model, input }: EmbedOptions) {
+  async embeddings({ model, input, signal }: EmbedOptions) {
     const { embeddings } = await this.client.models.embedContent({
       model,
       contents: input,
       config: {
+        abortSignal: signal,
         autoTruncate: true,
       },
     });
@@ -73,6 +74,7 @@ export class GoogleGenAIProvider extends ClientProvider {
     model,
     messages,
     tools,
+    signal,
     ...options
   }: GoogleGenAIChatConfig): GoogleGenAIChatParams {
     const systemInstruction = messages.filter(message => message.role === 'system');
@@ -94,6 +96,7 @@ export class GoogleGenAIProvider extends ClientProvider {
         }
       })),
       config: {
+        abortSignal: signal,
         systemInstruction: systemInstruction.map(message => message.content),
         tools: [{
           functionDeclarations: _.map(tools, tool => ({

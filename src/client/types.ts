@@ -33,6 +33,7 @@ export type EmbedOptions = {
   model: string;
   input: string | string[];
   dimensions?: number;
+  signal?: AbortSignal;
 };
 
 export type EmbedResponse = {
@@ -80,6 +81,7 @@ export type ChatOptions = {
     description: string;
     parameters?: any;
   }[];
+  signal?: AbortSignal;
 };
 
 export type ChatResponse = {

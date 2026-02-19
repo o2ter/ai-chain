@@ -28,6 +28,8 @@ import { Ollama, Config } from 'ollama';
 import { ClientProvider } from '../../client/provider';
 import { ChatOptions, EmbedOptions } from '../../client/types';
 
+type OllamaEmbedConfig = Omit<Parameters<Ollama['embed']>[0], keyof EmbedOptions> & EmbedOptions;
+
 type _OllamaChatConfig = Parameters<Ollama['chat']>[0];
 type OllamaChatConfig = Omit<_OllamaChatConfig, keyof ChatOptions | 'stream'> & ChatOptions;
 
@@ -47,7 +49,7 @@ export class OllamaProvider extends ClientProvider {
     }
   }
 
-  async embeddings(options: Parameters<Ollama['embed']>[0]) {
+  async embeddings({ signal, ...options }: OllamaEmbedConfig) {
     const {
       embeddings,
       prompt_eval_count,
@@ -110,7 +112,7 @@ export class OllamaProvider extends ClientProvider {
     };
   }
 
-  async chat(options: OllamaChatConfig) {
+  async chat({ signal, ...options }: OllamaChatConfig) {
 
     const response = await this.client.chat({
       ...this.#createChatParams(options),
@@ -132,7 +134,7 @@ export class OllamaProvider extends ClientProvider {
     };
   }
 
-  async* chatStream(options: OllamaChatConfig) {
+  async* chatStream({ signal, ...options }: OllamaChatConfig) {
 
     const response = await this.client.chat({
       stream: true,
