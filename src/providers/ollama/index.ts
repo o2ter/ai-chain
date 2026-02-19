@@ -71,14 +71,14 @@ export class OllamaProvider extends ClientProvider {
     ...options
   }: Omit<OllamaChatConfig, keyof ChatOptions<S>> & ChatOptions<S>) {
 
-    const params = {
+    const params: Omit<OllamaChatConfig, 'stream'> = {
       model,
       messages: messages.map(msg => {
         const { role, content } = msg;
         switch (role) {
           case 'system':
           case 'user':
-            return { role, content } as const;
+            return { role, content };
           case 'assistant':
             return {
               role,
@@ -89,14 +89,14 @@ export class OllamaProvider extends ClientProvider {
                   name: call.name,
                   arguments: call.arguments,
                 },
-              }) as const),
-            } as const;
+              })),
+            };
           case 'tool':
             return {
               role,
               content,
               tool_name: msg.tool_call_id,
-            } as const;
+            };
         }
       }),
       tools: tools ? _.map(tools, tool => ({
@@ -106,9 +106,9 @@ export class OllamaProvider extends ClientProvider {
           description: tool.description,
           parameters: tool.parameters,
         },
-      }) as const) : undefined,
+      })) : undefined,
       ...options,
-    } as const;
+    };
 
     if (stream) {
       const self = this;

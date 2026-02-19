@@ -61,14 +61,14 @@ export class OpenAIProvider extends ClientProvider {
     ...options
   }: Omit<OpenAIChatConfig, keyof ChatOptions<S>> & ChatOptions<S>) {
 
-    const params = {
+    const params: Omit<OpenAIChatConfig, 'stream'> = {
       model,
       messages: messages.map(msg => {
         const { role, content } = msg;
         switch (role) {
           case 'system':
           case 'user':
-            return { role, content } as const;
+            return { role, content };
           case 'assistant':
             return {
               role,
@@ -81,14 +81,14 @@ export class OpenAIProvider extends ClientProvider {
                   name: call.name,
                   arguments: JSON.stringify(call.arguments),
                 },
-              }) as const),
-            } as const;
+              })),
+            };
           case 'tool':
             return {
               role,
               content,
               tool_call_id: msg.tool_call_id,
-            } as const;
+            };
         }
       }),
       tools: tools ? _.map(tools, tool => ({
@@ -98,9 +98,9 @@ export class OpenAIProvider extends ClientProvider {
           description: tool.description,
           parameters: tool.parameters,
         },
-      }) as const) : undefined,
+      })) : undefined,
       ...options,
-    } as const;
+    };
 
     if (stream) {
       const self = this;
