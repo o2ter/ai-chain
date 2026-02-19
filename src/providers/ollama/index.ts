@@ -47,7 +47,7 @@ export class OllamaProvider extends ClientProvider {
     }
   }
 
-  async embeddings(options: EmbedOptions) {
+  async embeddings(options: Parameters<Ollama['embed']>[0]) {
     const {
       embeddings,
       prompt_eval_count,

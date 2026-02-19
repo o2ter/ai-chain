@@ -46,7 +46,7 @@ export class OpenAIProvider extends ClientProvider {
     }
   }
 
-  async embeddings(options: EmbedOptions) {
+  async embeddings(options: Parameters<OpenAI['embeddings']['create']>[0]) {
     const { data, usage } = await this.client.embeddings.create(options);
     return {
       embeddings: data.toSorted((a, b) => a.index - b.index).map(item => ({ values: item.embedding })),
