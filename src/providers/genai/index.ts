@@ -28,7 +28,8 @@ import { GoogleGenAI, GoogleGenAIOptions } from "@google/genai";
 import { ClientProvider } from '../../client/provider';
 import { ChatOptions, ChatResponse, EmbedOptions } from '../../client/types';
 
-type GoogleGenAIChatConfig = NonNullable<Parameters<GoogleGenAI['models']['generateContent']>[0]['config']>;
+type GoogleGenAIChatParams = Parameters<GoogleGenAI['models']['generateContent']>[0];
+type GoogleGenAIChatConfig = NonNullable<GoogleGenAIChatParams['config']>;
 
 export class GoogleGenAIProvider extends ClientProvider {
 
@@ -76,7 +77,7 @@ export class GoogleGenAIProvider extends ClientProvider {
   }: Omit<GoogleGenAIChatConfig, 'tools' | 'systemInstruction'> & ChatOptions<S>) {
 
     const systemInstruction = messages.filter(message => message.role === 'system');
-    const params = {
+    const params: GoogleGenAIChatParams = {
       model,
       contents: _.compact(messages.map(msg => {
         const { role, content } = msg;
