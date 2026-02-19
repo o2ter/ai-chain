@@ -50,8 +50,8 @@ export class Client<P extends keyof Providers> {
     return this.#provider.models();
   }
 
-  embeddings(options: EmbedOptions) {
-    return this.#provider.embeddings(options);
+  embeddings(options: Parameters<ProviderInstances[P]['embeddings']>[0]) {
+    return this.#provider.embeddings(options as any);
   }
 
   chat(options: Parameters<ProviderInstances[P]['chat']>[0]) {
