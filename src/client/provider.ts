@@ -32,5 +32,7 @@ export abstract class ClientProvider {
 
   abstract embeddings(options: EmbedOptions): Promise<EmbedResponse>;
 
-  abstract chat<S extends boolean = false>(options: ChatOptions<S>): ChatResponse<S>;
+  abstract chat(options: ChatOptions): Promise<ChatResponse>;
+
+  abstract chatStream(options: ChatOptions): AsyncGenerator<Partial<ChatResponse>>;
 };

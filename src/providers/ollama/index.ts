@@ -26,9 +26,10 @@
 import _ from 'lodash';
 import { Ollama, Config } from 'ollama';
 import { ClientProvider } from '../../client/provider';
-import { ChatOptions, ChatResponse, EmbedOptions } from '../../client/types';
+import { ChatOptions, EmbedOptions } from '../../client/types';
 
-type OllamaChatConfig = Parameters<Ollama['chat']>[0];
+type _OllamaChatConfig = Parameters<Ollama['chat']>[0];
+type OllamaChatConfig = Omit<_OllamaChatConfig, keyof ChatOptions | 'stream'> & ChatOptions;
 
 export class OllamaProvider extends ClientProvider {
 
@@ -63,15 +64,13 @@ export class OllamaProvider extends ClientProvider {
     };
   }
 
-  chat<S extends boolean = false>({
+  #createChatParams({
     model,
     messages,
     tools,
-    stream,
     ...options
-  }: Omit<OllamaChatConfig, keyof ChatOptions<S>> & ChatOptions<S>) {
-
-    const params: Omit<OllamaChatConfig, 'stream'> = {
+  }: OllamaChatConfig): Omit<_OllamaChatConfig, 'stream'> {
+    return {
       model,
       messages: messages.map(msg => {
         const { role, content } = msg;
@@ -109,79 +108,73 @@ export class OllamaProvider extends ClientProvider {
       })) : undefined,
       ...options,
     };
+  }
 
-    if (stream) {
-      const self = this;
+  async chat(options: OllamaChatConfig) {
 
-      return (async function* () {
+    const response = await this.client.chat({
+      ...this.#createChatParams(options),
+    });
 
-        const response = await self.client.chat({
-          stream: true,
-          ...params,
-        });
+    return {
+      content: response.message.content,
+      reasoning: response.message.thinking,
+      tool_calls: response.message.tool_calls?.map(call => ({
+        id: call.function.name,
+        name: call.function.name,
+        arguments: call.function.arguments,
+      })),
+      usage: {
+        prompt_tokens: response.prompt_eval_count,
+        completion_tokens: response.eval_count,
+        total_tokens: response.prompt_eval_count + response.eval_count,
+      },
+    };
+  }
 
-        let usage;
-        const calls: {
-          name: string;
-          arguments: any;
-        }[] = [];
+  async* chatStream(options: OllamaChatConfig) {
 
-        for await (const { message: { content, thinking, tool_calls }, ...data } of response) {
-          if (content) yield { content: content };
-          if (thinking) yield { reasoning: thinking };
-          if (tool_calls) {
-            for (const [index, { function: call }] of tool_calls.entries()) {
-              calls[index] = {
-                name: call?.name ?? calls[index]?.name ?? '',
-                arguments: call?.arguments ?? calls[index]?.arguments ?? {},
-              };
-            }
-          }
-          if (!_.isNil(data.prompt_eval_count) || !_.isNil(data.eval_count)) {
-            usage = {
-              prompt_tokens: data.prompt_eval_count ?? 0,
-              completion_tokens: data.eval_count ?? 0,
-              total_tokens: (data.prompt_eval_count ?? 0) + (data.eval_count ?? 0),
-            };
-          }
-        }
-        if (!_.isEmpty(calls)) {
-          yield {
-            tool_calls: calls.map(call => ({
-              id: call.name,
-              name: call.name,
-              arguments: call.arguments,
-            })),
+    const response = await this.client.chat({
+      stream: true,
+      ...this.#createChatParams(options),
+    });
+
+    let usage;
+    const calls: {
+      name: string;
+      arguments: any;
+    }[] = [];
+
+    for await (const { message: { content, thinking, tool_calls }, ...data } of response) {
+      if (content) yield { content: content };
+      if (thinking) yield { reasoning: thinking };
+      if (tool_calls) {
+        for (const [index, { function: call }] of tool_calls.entries()) {
+          calls[index] = {
+            name: call?.name ?? calls[index]?.name ?? '',
+            arguments: call?.arguments ?? calls[index]?.arguments ?? {},
           };
         }
-        if (usage) yield { usage };
-
-      })() as ChatResponse<S>;
-
-    } else {
-
-      return (async () => {
-
-        const response = await this.client.chat({
-          ...params,
-        });
-
-        return {
-          content: response.message.content,
-          reasoning: response.message.thinking,
-          tool_calls: response.message.tool_calls?.map(call => ({
-            id: call.function.name,
-            name: call.function.name,
-            arguments: call.function.arguments,
-          })),
-          usage: {
-            prompt_tokens: response.prompt_eval_count,
-            completion_tokens: response.eval_count,
-            total_tokens: response.prompt_eval_count + response.eval_count,
-          },
+      }
+      if (!_.isNil(data.prompt_eval_count) || !_.isNil(data.eval_count)) {
+        usage = {
+          prompt_tokens: data.prompt_eval_count ?? 0,
+          completion_tokens: data.eval_count ?? 0,
+          total_tokens: (data.prompt_eval_count ?? 0) + (data.eval_count ?? 0),
         };
-
-      })() as ChatResponse<S>;
+      }
     }
+
+    if (!_.isEmpty(calls)) {
+      yield {
+        tool_calls: calls.map(call => ({
+          id: call.name,
+          name: call.name,
+          arguments: call.arguments,
+        })),
+      };
+    }
+
+    if (usage) yield { usage };
   }
 };

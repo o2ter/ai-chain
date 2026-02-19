@@ -26,9 +26,10 @@
 import _ from 'lodash';
 import OpenAI, { ClientOptions } from 'openai';
 import { ClientProvider } from '../../client/provider';
-import { ChatOptions, ChatResponse, EmbedOptions } from '../../client/types';
+import { ChatOptions, EmbedOptions } from '../../client/types';
 
-type OpenAIChatConfig = Parameters<OpenAI['chat']['completions']['create']>[0];
+type _OpenAIChatConfig = Parameters<OpenAI['chat']['completions']['create']>[0];
+type OpenAIChatConfig = Omit<_OpenAIChatConfig, keyof ChatOptions | 'stream'> & ChatOptions;
 
 export class OpenAIProvider extends ClientProvider {
 
@@ -53,15 +54,13 @@ export class OpenAIProvider extends ClientProvider {
     };
   }
 
-  chat<S extends boolean = false>({
+  #createChatParams({
     model,
     messages,
     tools,
-    stream,
     ...options
-  }: Omit<OpenAIChatConfig, keyof ChatOptions<S>> & ChatOptions<S>) {
-
-    const params: Omit<OpenAIChatConfig, 'stream'> = {
+  }: OpenAIChatConfig): Omit<_OpenAIChatConfig, 'stream'> {
+    return {
       model,
       messages: messages.map(msg => {
         const { role, content } = msg;
@@ -101,90 +100,84 @@ export class OpenAIProvider extends ClientProvider {
       })) : undefined,
       ...options,
     };
+  }
 
-    if (stream) {
-      const self = this;
+  async chat(options: OpenAIChatConfig) {
 
-      return (async function* () {
+    const response = await this.client.chat.completions.create({
+      ...this.#createChatParams(options),
+    });
 
-        const response = await self.client.chat.completions.create({
-          stream: true,
-          stream_options: {
-            include_usage: true,
-          },
-          ...params,
-        });
+    const { choices: [{ message }] = [], usage } = response;
 
-        let usage;
-        const calls: {
-          id?: string;
-          name: string;
-          arguments: string;
-        }[] = [];
+    return {
+      content: message?.content ?? '',
+      tool_calls: message?.tool_calls?.flatMap(call => call.type === 'function' ? ({
+        id: call.id,
+        name: call.function.name,
+        arguments: JSON.parse(call.function.arguments),
+      }) : []),
+      usage: {
+        completion_tokens: usage?.completion_tokens,
+        prompt_tokens: usage?.prompt_tokens,
+        total_tokens: usage?.total_tokens,
+        reasoning_tokens: usage?.completion_tokens_details?.reasoning_tokens,
+        cached_tokens: usage?.prompt_tokens_details?.cached_tokens,
+      },
+    };
+  }
 
-        for await (const { choices: [{ delta: { content, tool_calls } }] = [], usage: _usage } of response) {
-          if (content) yield { content };
-          if (usage) usage = _usage;
-          if (tool_calls) {
-            for (const { type, index, id, function: call } of tool_calls) {
-              if (type === 'function') {
-                calls[index] = {
-                  id: id,
-                  name: `${calls[index]?.name ?? ''}${call?.name ?? ''}`,
-                  arguments: `${calls[index]?.arguments ?? ''}${call?.arguments ?? ''}`,
-                };
-              }
-            }
+  async* chatStream(options: OpenAIChatConfig) {
+
+    const response = await this.client.chat.completions.create({
+      stream: true,
+      stream_options: {
+        include_usage: true,
+      },
+      ...this.#createChatParams(options),
+    });
+
+    let usage;
+    const calls: {
+      id: string;
+      name: string;
+      arguments: string;
+    }[] = [];
+
+    for await (const { choices: [{ delta: { content, tool_calls } }] = [], usage: _usage } of response) {
+      if (content) yield { content };
+      if (usage) usage = _usage;
+      if (tool_calls) {
+        for (const { type, index, id, function: call } of tool_calls) {
+          if (type === 'function') {
+            calls[index] = {
+              id: id || calls[index]?.id || '',
+              name: `${calls[index]?.name ?? ''}${call?.name ?? ''}`,
+              arguments: `${calls[index]?.arguments ?? ''}${call?.arguments ?? ''}`,
+            };
           }
         }
-        if (!_.isEmpty(calls)) {
-          yield {
-            tool_calls: calls.map(call => ({
-              id: call.id,
-              name: call.name,
-              arguments: JSON.parse(call.arguments),
-            })),
-          };
-        }
-        if (usage) yield {
-          usage: {
-            completion_tokens: usage?.completion_tokens,
-            prompt_tokens: usage?.prompt_tokens,
-            total_tokens: usage?.total_tokens,
-            reasoning_tokens: usage?.completion_tokens_details?.reasoning_tokens,
-            cached_tokens: usage?.prompt_tokens_details?.cached_tokens,
-          },
-        };
-
-      })() as ChatResponse<S>;
-
-    } else {
-
-      return (async () => {
-
-        const response = await this.client.chat.completions.create({
-          ...params,
-        });
-
-        const { choices: [{ message }] = [], usage } = response;
-
-        return {
-          content: message?.content ?? '',
-          tool_calls: message?.tool_calls?.flatMap(call => call.type === 'function' ? ({
-            id: call.id,
-            name: call.function.name,
-            arguments: JSON.parse(call.function.arguments),
-          }) : []),
-          usage: {
-            completion_tokens: usage?.completion_tokens,
-            prompt_tokens: usage?.prompt_tokens,
-            total_tokens: usage?.total_tokens,
-            reasoning_tokens: usage?.completion_tokens_details?.reasoning_tokens,
-            cached_tokens: usage?.prompt_tokens_details?.cached_tokens,
-          },
-        };
-
-      })() as ChatResponse<S>;
+      }
     }
+
+    if (!_.isEmpty(calls)) {
+      yield {
+        tool_calls: calls.map(call => ({
+          id: call.id,
+          name: call.name,
+          arguments: JSON.parse(call.arguments),
+        })),
+      };
+    }
+
+    if (usage) yield {
+      usage: {
+        completion_tokens: usage?.completion_tokens,
+        prompt_tokens: usage?.prompt_tokens,
+        total_tokens: usage?.total_tokens,
+        reasoning_tokens: usage?.completion_tokens_details?.reasoning_tokens,
+        cached_tokens: usage?.prompt_tokens_details?.cached_tokens,
+      },
+    };
   }
 };

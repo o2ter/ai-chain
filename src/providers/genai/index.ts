@@ -29,7 +29,8 @@ import { ClientProvider } from '../../client/provider';
 import { ChatOptions, ChatResponse, EmbedOptions } from '../../client/types';
 
 type GoogleGenAIChatParams = Parameters<GoogleGenAI['models']['generateContent']>[0];
-type GoogleGenAIChatConfig = NonNullable<GoogleGenAIChatParams['config']>;
+type _GoogleGenAIChatConfig = NonNullable<GoogleGenAIChatParams['config']>;
+type GoogleGenAIChatConfig = Omit<_GoogleGenAIChatConfig, 'tools' | 'systemInstruction'> & ChatOptions;
 
 export class GoogleGenAIProvider extends ClientProvider {
 
@@ -68,16 +69,14 @@ export class GoogleGenAIProvider extends ClientProvider {
     };
   }
 
-  chat<S extends boolean = false>({
+  #createChatParams({
     model,
     messages,
     tools,
-    stream,
     ...options
-  }: Omit<GoogleGenAIChatConfig, 'tools' | 'systemInstruction'> & ChatOptions<S>) {
-
+  }: GoogleGenAIChatConfig): GoogleGenAIChatParams {
     const systemInstruction = messages.filter(message => message.role === 'system');
-    const params: GoogleGenAIChatParams = {
+    return {
       model,
       contents: _.compact(messages.map(msg => {
         const { role, content } = msg;
@@ -106,84 +105,78 @@ export class GoogleGenAIProvider extends ClientProvider {
         ...options,
       },
     };
+  }
 
-    if (stream) {
-      const self = this;
+  async chat(options: GoogleGenAIChatConfig) {
 
-      return (async function* () {
+    const response = await this.client.models.generateContent({
+      ...this.#createChatParams(options),
+    });
 
-        const response = await self.client.models.generateContentStream({
-          ...params,
-        });
+    const total_tokens = response.usageMetadata?.totalTokenCount ?? 0;
+    const prompt_tokens = response.usageMetadata?.promptTokenCount ?? 0;
+    const completion_tokens = total_tokens - prompt_tokens;
 
-        let usage;
-        const calls: {
-          id?: string;
-          name: string;
-          arguments: any;
-        }[] = [];
+    return {
+      content: response.text ?? '',
+      tool_calls: response.functionCalls?.map(call => ({
+        id: call.id || '',
+        name: call.name || '',
+        arguments: call.args,
+      })),
+      usage: {
+        completion_tokens: completion_tokens || undefined,
+        prompt_tokens: prompt_tokens || undefined,
+        total_tokens: total_tokens || undefined,
+        reasoning_tokens: response.usageMetadata?.thoughtsTokenCount,
+        cached_tokens: response.usageMetadata?.cachedContentTokenCount,
+      },
+    };
+  }
 
-        for await (const { text: content, functionCalls, usageMetadata: _usage } of response) {
-          if (content) yield { content };
-          if (_usage) usage = _usage;
-          if (functionCalls) {
-            for (const [index, call] of functionCalls.entries()) {
-              calls[index] = {
-                id: call.id,
-                name: call.name ?? calls[index]?.name ?? '',
-                arguments: call.args ?? calls[index]?.arguments ?? {},
-              };
-            }
-          }
-        }
-        if (!_.isEmpty(calls)) yield { tool_calls: calls };
-        if (usage) {
-          const total_tokens = usage.totalTokenCount ?? 0;
-          const prompt_tokens = usage.promptTokenCount ?? 0;
-          const completion_tokens = total_tokens - prompt_tokens;
+  async* chatStream(options: GoogleGenAIChatConfig) {
 
-          yield {
-            usage: {
-              completion_tokens: completion_tokens || undefined,
-              prompt_tokens: prompt_tokens || undefined,
-              total_tokens: total_tokens || undefined,
-              reasoning_tokens: usage.thoughtsTokenCount,
-              cached_tokens: usage.cachedContentTokenCount,
-            },
+    const response = await this.client.models.generateContentStream({
+      ...this.#createChatParams(options),
+    });
+
+    let usage;
+    const calls: {
+      id: string;
+      name: string;
+      arguments: any;
+    }[] = [];
+
+    for await (const { text: content, functionCalls, usageMetadata: _usage } of response) {
+      if (content) yield { content };
+      if (_usage) usage = _usage;
+      if (functionCalls) {
+        for (const [index, call] of functionCalls.entries()) {
+          calls[index] = {
+            id: call.id || calls[index]?.id || '',
+            name: call.name ?? calls[index]?.name ?? '',
+            arguments: call.args ?? calls[index]?.arguments ?? {},
           };
         }
+      }
+    }
 
-      })() as ChatResponse<S>;
+    if (!_.isEmpty(calls)) yield { tool_calls: calls };
 
-    } else {
+    if (usage) {
+      const total_tokens = usage.totalTokenCount ?? 0;
+      const prompt_tokens = usage.promptTokenCount ?? 0;
+      const completion_tokens = total_tokens - prompt_tokens;
 
-      return (async () => {
-
-        const response = await this.client.models.generateContent({
-          ...params,
-        });
-
-        const total_tokens = response.usageMetadata?.totalTokenCount ?? 0;
-        const prompt_tokens = response.usageMetadata?.promptTokenCount ?? 0;
-        const completion_tokens = total_tokens - prompt_tokens;
-
-        return {
-          content: response.text ?? '',
-          tool_calls: response.functionCalls?.map(call => ({
-            id: call.id,
-            name: call.name,
-            arguments: call.args,
-          })),
-          usage: {
-            completion_tokens: completion_tokens || undefined,
-            prompt_tokens: prompt_tokens || undefined,
-            total_tokens: total_tokens || undefined,
-            reasoning_tokens: response.usageMetadata?.thoughtsTokenCount,
-            cached_tokens: response.usageMetadata?.cachedContentTokenCount,
-          },
-        };
-
-      })() as ChatResponse<S>;
+      yield {
+        usage: {
+          completion_tokens: completion_tokens || undefined,
+          prompt_tokens: prompt_tokens || undefined,
+          total_tokens: total_tokens || undefined,
+          reasoning_tokens: usage.thoughtsTokenCount,
+          cached_tokens: usage.cachedContentTokenCount,
+        },
+      };
     }
   }
 };

@@ -72,7 +72,7 @@ type ChatMessage =
   | ChatAssistantMessage
   | ChatToolMessage;
 
-export type ChatOptions<S extends boolean> = {
+export type ChatOptions = {
   model: string;
   messages: ChatMessage[];
   tools?: {
@@ -80,22 +80,17 @@ export type ChatOptions<S extends boolean> = {
     description: string;
     parameters?: any;
   }[];
-  stream?: S;
 };
 
-type ChatContent = {
+export type ChatResponse = {
   content: string;
   reasoning?: string;
   tool_calls?: ToolCall[];
   usage?: {
-    completion_tokens: number;
-    prompt_tokens: number;
-    total_tokens: number;
+    completion_tokens?: number;
+    prompt_tokens?: number;
+    total_tokens?: number;
     reasoning_tokens?: number;
     cached_tokens?: number;
   };
 };
-
-export type ChatResponse<S extends boolean> = S extends true
-  ? AsyncGenerator<Partial<ChatContent>>
-  : Promise<ChatContent>;
