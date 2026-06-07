@@ -55,10 +55,6 @@ export class Client<P extends keyof Providers> {
     return this.#provider.embeddings(options as any);
   }
 
-  chat(options: Parameters<ProviderInstances[P]['chat']>[0]) {
-    return this.#provider.chat(options as any);
-  }
-
   chatStream(options: Parameters<ProviderInstances[P]['chatStream']>[0]) {
     return this.#provider.chatStream(options as any);
   }

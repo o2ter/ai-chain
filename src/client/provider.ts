@@ -24,15 +24,13 @@
 //
 
 import _ from 'lodash';
-import { ChatOptions, ChatResponse, ChatResponseChunk, EmbedOptions, EmbedResponse } from './types';
+import { ChatOptions, ChatResponseChunk, EmbedOptions, EmbedResponse } from './types';
 
 export abstract class ClientProvider {
 
   abstract models(): AsyncIterable<{ name: string }>;
 
   abstract embeddings(options: EmbedOptions): Promise<EmbedResponse>;
-
-  abstract chat(options: ChatOptions): Promise<ChatResponse>;
 
   abstract chatStream(options: ChatOptions): AsyncGenerator<ChatResponseChunk>;
 };

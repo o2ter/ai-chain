@@ -40,7 +40,7 @@ export type EmbedResponse = {
   embeddings: {
     values: number[];
     truncated?: boolean;
-   }[];
+  }[];
   usage?: {
     prompt_tokens: number;
     total_tokens: number;
@@ -84,21 +84,16 @@ export type ChatOptions = {
   signal?: AbortSignal;
 };
 
-export type ChatResponse = {
-  content: string | ContentPart[];
-  reasoning?: string;
-  tool_calls?: ToolCall[];
-  usage?: {
-    completion_tokens?: number;
-    prompt_tokens?: number;
-    total_tokens?: number;
-    reasoning_tokens?: number;
-    cached_tokens?: number;
-  };
+type ChatResponseUsage = {
+  completion_tokens?: number;
+  prompt_tokens?: number;
+  total_tokens?: number;
+  reasoning_tokens?: number;
+  cached_tokens?: number;
 };
 
 export type ChatResponseChunk =
   | { type: 'content'; content: string | ContentPart[] }
   | { type: 'reasoning'; reasoning: string }
   | { type: 'tool_call'; tool_call_id: string; name?: string; arguments?: string }
-  | { type: 'usage'; usage: NonNullable<ChatResponse['usage']> };
+  | { type: 'usage'; usage: ChatResponseUsage };

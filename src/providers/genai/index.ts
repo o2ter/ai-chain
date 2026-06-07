@@ -110,33 +110,6 @@ export class GoogleGenAIProvider extends ClientProvider {
     };
   }
 
-  async chat(options: GoogleGenAIChatConfig) {
-
-    const response = await this.client.models.generateContent({
-      ...this.#createChatParams(options),
-    });
-
-    const total_tokens = response.usageMetadata?.totalTokenCount ?? 0;
-    const prompt_tokens = response.usageMetadata?.promptTokenCount ?? 0;
-    const completion_tokens = total_tokens - prompt_tokens;
-
-    return {
-      content: response.text ?? '',
-      tool_calls: response.functionCalls?.map(call => ({
-        id: call.id || '',
-        name: call.name || '',
-        arguments: call.args,
-      })),
-      usage: {
-        completion_tokens: completion_tokens,
-        prompt_tokens: prompt_tokens,
-        total_tokens: total_tokens,
-        reasoning_tokens: response.usageMetadata?.thoughtsTokenCount,
-        cached_tokens: response.usageMetadata?.cachedContentTokenCount,
-      },
-    };
-  }
-
   async* chatStream(options: GoogleGenAIChatConfig) {
 
     const response = await this.client.models.generateContentStream({

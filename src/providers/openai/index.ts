@@ -109,32 +109,6 @@ export class OpenAIProvider extends ClientProvider {
     };
   }
 
-  async chat({ signal, ...options }: OpenAIChatConfig) {
-
-    const response = await this.client.chat.completions.create({
-      ...this.#createChatParams(options),
-    }, { signal });
-
-    const { choices: [{ message }] = [], usage } = response;
-
-    return {
-      content: message?.content ?? '',
-      reasoning: (message as any)?.[this.reasoningKey],
-      tool_calls: message?.tool_calls?.flatMap(call => call.type === 'function' ? ({
-        id: call.id,
-        name: call.function.name,
-        arguments: JSON.parse(call.function.arguments),
-      }) : []),
-      usage: {
-        completion_tokens: usage?.completion_tokens,
-        prompt_tokens: usage?.prompt_tokens,
-        total_tokens: usage?.total_tokens,
-        reasoning_tokens: usage?.completion_tokens_details?.reasoning_tokens,
-        cached_tokens: usage?.prompt_tokens_details?.cached_tokens,
-      },
-    };
-  }
-
   async* chatStream({ signal, ...options }: OpenAIChatConfig) {
 
     const response = await this.client.chat.completions.create({

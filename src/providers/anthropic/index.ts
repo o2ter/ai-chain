@@ -77,34 +77,6 @@ export class AnthropicProvider extends ClientProvider {
     };
   }
 
-  async chat({ signal, ...options }: AnthropicChatConfig) {
-    const response = await this.client.messages.create({
-      ...this.#createChatParams(options),
-      stream: false,
-    }, { signal });
-
-    const { content: _content, usage } = response;
-
-    const content = _.filter(_content, x => x.type === 'text');
-    const reasoning = _.filter(_content, x => x.type === 'thinking').map(x => x.thinking).join('\n');
-    const tool_calls = _.filter(_content, x => x.type === 'tool_use').map(x => ({
-      id: x.id,
-      name: x.name,
-      arguments: x.input,
-    }));
-
-    return {
-      content,
-      reasoning,
-      tool_calls,
-      usage: {
-        completion_tokens: usage.input_tokens,
-        prompt_tokens: usage.input_tokens,
-        total_tokens: usage.input_tokens + usage.output_tokens,
-      },
-    };
-  }
-
   async *chatStream({ signal, ...options }: AnthropicChatConfig) {
     const stream = await this.client.messages.create({
       ...this.#createChatParams(options),

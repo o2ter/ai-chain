@@ -115,28 +115,6 @@ export class OllamaProvider extends ClientProvider {
     };
   }
 
-  async chat({ signal, ...options }: OllamaChatConfig) {
-
-    const response = await this.client.chat({
-      ...this.#createChatParams(options),
-    });
-
-    return {
-      content: response.message.content,
-      reasoning: response.message.thinking,
-      tool_calls: response.message.tool_calls?.map(call => ({
-        id: call.function.name,
-        name: call.function.name,
-        arguments: call.function.arguments,
-      })),
-      usage: {
-        prompt_tokens: response.prompt_eval_count,
-        completion_tokens: response.eval_count,
-        total_tokens: response.prompt_eval_count + response.eval_count,
-      },
-    };
-  }
-
   async* chatStream({ signal, ...options }: OllamaChatConfig) {
 
     const response = await this.client.chat({
