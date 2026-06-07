@@ -74,11 +74,34 @@ export class GoogleGenAIProvider extends ClientProvider {
     const { role, content } = message;
     switch (role) {
       case 'user':
-        return { role, content };
+        return {
+          role,
+          parts: _.isString(content)
+            ? [{ text: content }]
+            : content.map(c => {
+              switch (c.type) {
+                case 'text':
+                  return { text: c.text };
+                case 'image_url':
+                  return {
+                    image: {
+                      source: {
+                        url: c.image_url.url,
+                      },
+                    },
+                  };
+                default:
+                  throw new Error(`Unsupported content type: ${(c as any).type}`);
+              }
+            }),
+        };
       case 'assistant':
         return {
           role: 'model',
-          content: message.content,
+          parts: _.compact([
+            message.reasoning ? { text: message.reasoning, thought: true } : null,
+            { text: message.content },
+          ]),
         };
       default:
         throw new Error(`Unsupported message role: ${role}`);
