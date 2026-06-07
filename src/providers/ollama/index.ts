@@ -75,6 +75,7 @@ export class OllamaProvider extends ClientProvider {
           content: _.isString(content)
             ? content
             : content.filter(c => c.type === 'text').map(c => 'text' in c ? c.text : '').join('\n'),
+          images: _.isString(content) ? undefined : content.filter(c => c.type === 'image_url').map(c => 'image_url' in c ? c.image_url.url : ''),
         };
       case 'assistant':
         return {
