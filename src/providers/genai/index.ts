@@ -82,14 +82,13 @@ export class GoogleGenAIProvider extends ClientProvider {
               switch (c.type) {
                 case 'text':
                   return { text: c.text };
-                case 'image_url':
-                  return {
-                    image: {
-                      source: {
-                        url: c.image_url.url,
-                      },
-                    },
-                  };
+                // case 'image_url':
+                //   return {
+                //     inlineData: {
+                //       mimeType: "image/jpeg",
+                //       data: imageBase64,
+                //     },
+                //   };
                 default:
                   throw new Error(`Unsupported content type: ${(c as any).type}`);
               }
