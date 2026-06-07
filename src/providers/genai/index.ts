@@ -26,7 +26,7 @@
 import _ from 'lodash';
 import { GoogleGenAI, GoogleGenAIOptions } from "@google/genai";
 import { ClientProvider } from '../../client/provider';
-import { ChatOptions, ChatResponse, EmbedOptions } from '../../client/types';
+import { ChatOptions, EmbedOptions } from '../../client/types';
 
 type GoogleGenAIChatParams = Parameters<GoogleGenAI['models']['generateContent']>[0];
 type _GoogleGenAIChatConfig = NonNullable<GoogleGenAIChatParams['config']>;
