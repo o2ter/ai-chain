@@ -24,6 +24,7 @@
 //
 
 import _ from 'lodash';
+import axios from 'axios';
 import { GoogleGenAI, GoogleGenAIOptions, Content } from "@google/genai";
 import { ClientProvider } from '../../client/provider';
 import { ChatOptions, EmbedOptions } from '../../client/types';
@@ -70,7 +71,7 @@ export class GoogleGenAIProvider extends ClientProvider {
     };
   }
 
-  #convertMessage(message: ChatOptions['messages'][number]): Content {
+  async #convertMessage(message: ChatOptions['messages'][number]): Promise<Content> {
     const { role, content } = message;
     switch (role) {
       case 'user':
@@ -78,7 +79,7 @@ export class GoogleGenAIProvider extends ClientProvider {
           role,
           parts: _.isString(content)
             ? [{ text: content }]
-            : content.map(c => {
+            : await Promise.all(content.map(async c => {
               switch (c.type) {
                 case 'text':
                   return { text: c.text };
@@ -93,14 +94,19 @@ export class GoogleGenAIProvider extends ClientProvider {
                       },
                     };
                   } else {
+                    const response = await axios.get(url, { responseType: 'arraybuffer' });
+                    const base64String = Buffer.from(response.data).toString('base64');
                     return {
-                      inlineData: {}
+                      inlineData: {
+                        mimeType: response.headers['content-type'] as string || 'application/octet-stream',
+                        data: base64String,
+                      },
                     };
                   }
                 default:
                   throw new Error(`Unsupported content type: ${(c as any).type}`);
               }
-            }),
+            })),
         };
       case 'assistant':
         return {
@@ -148,7 +154,7 @@ export class GoogleGenAIProvider extends ClientProvider {
 
     const response = await this.client.models.generateContentStream({
       model,
-      contents: messages.map(msg => this.#convertMessage(msg)),
+      contents: await Promise.all(messages.map(msg => this.#convertMessage(msg))),
       config: {
         ...options,
         abortSignal: signal,
