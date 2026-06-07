@@ -185,6 +185,7 @@ export class AnthropicProvider extends ClientProvider {
           completion_tokens: usage.output_tokens,
           prompt_tokens: usage.input_tokens ?? 0,
           total_tokens: (usage.input_tokens ?? 0) + usage.output_tokens,
+          cached_tokens: usage.cache_read_input_tokens ?? undefined,
         },
       } as const;
     }
