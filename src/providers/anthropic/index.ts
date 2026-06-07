@@ -63,13 +63,26 @@ export class AnthropicProvider extends ClientProvider {
                 case 'text':
                   return { type: 'text', text: c.text };
                 case 'image_url':
-                  return {
-                    type: 'image',
-                    source: {
-                      type: 'url',
-                      url: c.image_url.url,
-                    },
-                  };
+                  const url = c.image_url.url;
+                  const matches = url.match(/^data:([^;]+);base64,(.+)$/);
+                  if (matches) {
+                    return {
+                      type: 'image',
+                      source: {
+                        type: 'base64',
+                        media_type: matches[1] as any,
+                        data: matches[2],
+                      },
+                    };
+                  } else {
+                    return {
+                      type: 'image',
+                      source: {
+                        type: 'url',
+                        url: c.image_url.url,
+                      },
+                    };
+                  }
                 default:
                   throw new Error(`Unsupported content type: ${(c as any).type}`);
               }
