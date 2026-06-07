@@ -135,11 +135,11 @@ export class OpenAIProvider extends ClientProvider {
   async* chatStream({ signal, ...options }: OpenAIChatConfig) {
 
     const response = await this.client.chat.completions.create({
+      ...this.#createChatParams(options),
       stream: true,
       stream_options: {
         include_usage: true,
       },
-      ...this.#createChatParams(options),
     }, { signal });
 
     let usage;

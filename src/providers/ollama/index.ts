@@ -140,8 +140,8 @@ export class OllamaProvider extends ClientProvider {
   async* chatStream({ signal, ...options }: OllamaChatConfig) {
 
     const response = await this.client.chat({
-      stream: true,
       ...this.#createChatParams(options),
+      stream: true,
     });
 
     let usage;

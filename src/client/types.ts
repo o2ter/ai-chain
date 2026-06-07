@@ -85,7 +85,7 @@ export type ChatOptions = {
 };
 
 export type ChatResponse = {
-  content: string;
+  content: string | ContentPart[];
   reasoning?: string;
   tool_calls?: ToolCall[];
   usage?: {
