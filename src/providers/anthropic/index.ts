@@ -54,9 +54,38 @@ export class AnthropicProvider extends ClientProvider {
     const { role, content } = message;
     switch (role) {
       case 'user':
-        return { role: 'user', content };
+        return {
+          role: 'user',
+          content: _.isString(content)
+            ? content
+            : content.map(c => {
+              switch (c.type) {
+                case 'text':
+                  return { type: 'text', text: c.text };
+                case 'image_url':
+                  return {
+                    type: 'image',
+                    source: {
+                      type: 'url',
+                      url: c.image_url.url,
+                    },
+                  };
+                default:
+                  throw new Error(`Unsupported content type: ${(c as any).type}`);
+              }
+            }),
+        };
       case 'assistant':
         return { role: 'assistant', content };
+      case 'tool':
+        return {
+          role: 'user',
+          content: [{
+            type: 'tool_result',
+            tool_use_id: message.tool_call_id,
+            content,
+          }],
+        };
       default:
         throw new Error(`Unsupported message role: ${role}`);
     }
