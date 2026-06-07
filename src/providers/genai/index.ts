@@ -101,7 +101,29 @@ export class GoogleGenAIProvider extends ClientProvider {
           parts: _.compact([
             message.reasoning ? { text: message.reasoning, thought: true } : null,
             { text: message.content },
+            ...message.tool_calls?.map(call => ({
+              functionCall: {
+                name: call.name,
+                arguments: call.arguments,
+              },
+            })) ?? [],
           ]),
+        };
+      case 'tool':
+        let response;
+        try {
+          response = JSON.parse(content);
+        } catch {
+          response = { text: content };
+        }
+        return {
+          role: 'tool',
+          parts: [{
+            functionResponse: {
+              id: message.tool_call_id,
+              response: response,
+            },
+          }],
         };
       default:
         throw new Error(`Unsupported message role: ${role}`);
