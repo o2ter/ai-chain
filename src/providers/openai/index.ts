@@ -58,6 +58,34 @@ export class OpenAIProvider extends ClientProvider {
     };
   }
 
+  #convertMessage(message: ChatOptions['messages'][number]): _OpenAIChatConfig['messages'][number] {
+    const { role, content } = message;
+    switch (role) {
+      case 'user':
+        return { role, content };
+      case 'assistant':
+        return {
+          role,
+          content,
+          [this.reasoningKey]: message.reasoning,
+          tool_calls: message.tool_calls?.map(call => ({
+            id: call.id,
+            type: 'function',
+            function: {
+              name: call.name,
+              arguments: JSON.stringify(call.arguments),
+            },
+          })),
+        };
+      case 'tool':
+        return {
+          role,
+          content,
+          tool_call_id: message.tool_call_id,
+        };
+    }
+  }
+
   async* chat({
     model,
     systemMessage,
@@ -76,33 +104,7 @@ export class OpenAIProvider extends ClientProvider {
       model,
       messages: _.compact([
         systemMessage && { role: 'system', content: systemMessage },
-        ...messages.map(msg => {
-          const { role, content } = msg;
-          switch (role) {
-            case 'user':
-              return { role, content };
-            case 'assistant':
-              return {
-                role,
-                content,
-                [this.reasoningKey]: msg.reasoning,
-                tool_calls: msg.tool_calls?.map(call => ({
-                  id: call.id,
-                  type: 'function',
-                  function: {
-                    name: call.name,
-                    arguments: JSON.stringify(call.arguments),
-                  },
-                })),
-              };
-            case 'tool':
-              return {
-                role,
-                content,
-                tool_call_id: msg.tool_call_id,
-              };
-          }
-        }),
+        ...messages.map(msg => this.#convertMessage(msg)),
       ]),
       tools: tools ? _.map(tools, tool => ({
         type: 'function',
