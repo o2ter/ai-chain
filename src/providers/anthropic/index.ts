@@ -85,7 +85,13 @@ export class AnthropicProvider extends ClientProvider {
 
     const { content: _content, usage } = response;
 
-    const content = _.filter(_content, x => x.type !== 'tool_use');
+    const content = _.filter(_content, x => x.type === 'thinking' || x.type === 'text').map(x => {
+      if (x.type === 'thinking') {
+        return { type: 'text', text: x.thinking } as const;
+      } else {
+        return { type: 'text', text: x.text } as const;
+      }
+    });
     const tool_calls = _.filter(_content, x => x.type === 'tool_use').map(x => ({
       id: x.id,
       name: x.name,
