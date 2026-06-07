@@ -50,6 +50,18 @@ export class AnthropicProvider extends ClientProvider {
     throw new Error('Anthropic API does not support embeddings');
   }
 
+  #convertMessage(message: ChatOptions['messages'][number]): _AnthropicChatConfig['messages'][number] {
+    const { role, content } = message;
+    switch (role) {
+      case 'user':
+        return { role: 'user', content };
+      case 'assistant':
+        return { role: 'assistant', content };
+      default:
+        throw new Error(`Unsupported message role: ${role}`);
+    }
+  }
+
   async *chat({
     model,
     systemMessage,
@@ -63,14 +75,7 @@ export class AnthropicProvider extends ClientProvider {
       stream: true,
       model,
       system: systemMessage,
-      messages: messages.map(msg => {
-        if (msg.role === 'user') {
-          return { role: 'user', content: msg.content };
-        } else if (msg.role === 'assistant') {
-          return { role: 'assistant', content: msg.content };
-        }
-        return null;
-      }),
+      messages: messages.map(msg => this.#convertMessage(msg)),
       tools: tools ? _.map(tools, tool => ({
         name: tool.name,
         description: tool.description,

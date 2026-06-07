@@ -57,7 +57,7 @@ type ChatUserMessage = {
 };
 type ChatAssistantMessage = {
   role: 'assistant';
-  content: string | ContentPart[];
+  content: string;
   reasoning?: string;
   tool_calls?: ToolCall[];
 };
@@ -93,7 +93,7 @@ type ChatResponseUsage = {
 };
 
 export type ChatResponseChunk =
-  | { type: 'content'; content: string | ContentPart[] }
+  | { type: 'content'; content: string }
   | { type: 'reasoning'; reasoning: string }
   | { type: 'tool_call'; tool_call_id: string; name?: string; arguments?: string }
   | { type: 'usage'; usage: ChatResponseUsage };

@@ -24,7 +24,7 @@
 //
 
 import _ from 'lodash';
-import { GoogleGenAI, GoogleGenAIOptions } from "@google/genai";
+import { GoogleGenAI, GoogleGenAIOptions, Content } from "@google/genai";
 import { ClientProvider } from '../../client/provider';
 import { ChatOptions, EmbedOptions } from '../../client/types';
 
@@ -70,6 +70,21 @@ export class GoogleGenAIProvider extends ClientProvider {
     };
   }
 
+  #convertMessage(message: ChatOptions['messages'][number]): Content {
+    const { role, content } = message;
+    switch (role) {
+      case 'user':
+        return { role, content };
+      case 'assistant':
+        return {
+          role: 'model',
+          content: message.content,
+        };
+      default:
+        throw new Error(`Unsupported message role: ${role}`);
+    }
+  }
+
   async* chat({
     model,
     systemMessage,
@@ -81,21 +96,7 @@ export class GoogleGenAIProvider extends ClientProvider {
 
     const response = await this.client.models.generateContentStream({
       model,
-      contents: _.compact(messages.map(msg => {
-        const { role, content } = msg;
-        switch (role) {
-          case 'user':
-            return {
-              role: 'user',
-              parts: [{ text: content }],
-            };
-          case 'assistant':
-            return {
-              role: 'model',
-              parts: [{ text: content }],
-            };
-        }
-      })),
+      contents: messages.map(msg => this.#convertMessage(msg)),
       config: {
         ...options,
         abortSignal: signal,

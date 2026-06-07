@@ -66,6 +66,35 @@ export class OllamaProvider extends ClientProvider {
     };
   }
 
+  #convertMessage(message: ChatOptions['messages'][number]): NonNullable<_OllamaChatConfig['messages']>[number] {
+    const { role, content } = message;
+    switch (role) {
+      case 'user':
+        return { role, content };
+      case 'assistant':
+        return {
+          role: 'model',
+          content,
+          thinking: message.reasoning,
+          tool_calls: message.tool_calls?.map(call => ({
+            id: call.id,
+            function: {
+              name: call.name,
+              arguments: call.arguments,
+            },
+          })),
+        };
+      case 'tool':
+        return {
+          role,
+          content,
+          tool_name: message.tool_call_id,
+        };
+      default:
+        throw new Error(`Unsupported message role: ${role}`);
+    }
+  }
+
   async* chat({
     model,
     systemMessage,
@@ -81,31 +110,7 @@ export class OllamaProvider extends ClientProvider {
       model,
       messages: _.compact([
         systemMessage && { role: 'system', content: systemMessage },
-        ...messages.map(msg => {
-          const { role, content } = msg;
-          switch (role) {
-            case 'user':
-              return { role, content };
-            case 'assistant':
-              return {
-                role,
-                content,
-                thinking: msg.reasoning,
-                tool_calls: msg.tool_calls?.map(call => ({
-                  function: {
-                    name: call.name,
-                    arguments: call.arguments,
-                  },
-                })),
-              };
-            case 'tool':
-              return {
-                role,
-                content,
-                tool_name: msg.tool_call_id,
-              };
-          }
-        }),
+        ...messages.map(msg => this.#convertMessage(msg)),
       ]),
       tools: tools ? _.map(tools, tool => ({
         type: 'function',

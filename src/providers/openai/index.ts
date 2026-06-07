@@ -83,6 +83,8 @@ export class OpenAIProvider extends ClientProvider {
           content,
           tool_call_id: message.tool_call_id,
         };
+      default:
+        throw new Error(`Unsupported message role: ${role}`);
     }
   }
 
