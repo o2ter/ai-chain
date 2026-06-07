@@ -131,7 +131,7 @@ export class OllamaProvider extends ClientProvider {
       model,
       messages: _.compact([
         systemMessage && { role: 'system', content: systemMessage },
-        ...messages.map(msg => this.#convertMessage(msg)),
+        ...await Promise.all(messages.map(msg => this.#convertMessage(msg))),
       ]),
       tools: tools ? _.map(tools, tool => ({
         type: 'function',
