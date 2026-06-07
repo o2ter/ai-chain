@@ -109,7 +109,7 @@ export class OllamaProvider extends ClientProvider {
         return {
           role: 'tool',
           content,
-          tool_name: message.tool_call_id,
+          tool_name: message.name,
         };
       default:
         throw new Error(`Unsupported message role: ${role}`);

@@ -135,6 +135,7 @@ export class GoogleGenAIProvider extends ClientProvider {
             functionResponse: {
               id: message.tool_call_id,
               response: response,
+              name: message.name,
             },
           }],
         };

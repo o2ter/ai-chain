@@ -65,6 +65,7 @@ type ChatToolMessage = {
   role: 'tool';
   content: string;
   tool_call_id: string;
+  name: string;
 };
 
 type ChatMessage =
