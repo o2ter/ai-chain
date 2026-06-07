@@ -144,46 +144,33 @@ export class OllamaProvider extends ClientProvider {
       stream: true,
     });
 
-    let usage;
-    const calls: {
-      id: string;
-      name: string;
-      arguments: any;
-    }[] = [];
-
     const now = Date.now();
+    const toolCallIds = new Map<number, string>();
 
     for await (const { message: { content, thinking, tool_calls }, ...data } of response) {
-      if (content) yield { content: content };
-      if (thinking) yield { reasoning: thinking };
+      if (content) yield { type: 'content', content } as const;
+      if (thinking) yield { type: 'reasoning', reasoning: thinking } as const;
       if (tool_calls) {
         for (const [index, { id, function: call }] of (tool_calls as (ToolCall & { id?: string })[]).entries()) {
-          calls[index] = {
-            id: id ?? `tool-${now}-${index}`,
-            name: call?.name ?? calls[index]?.name ?? '',
-            arguments: call?.arguments ?? calls[index]?.arguments ?? {},
-          };
+          if (!toolCallIds.has(index)) toolCallIds.set(index, id ?? `tool-${now}-${index}`);
+          yield {
+            type: 'tool_call',
+            tool_call_id: toolCallIds.get(index)!,
+            name: call.name,
+            arguments: call.arguments as any,
+          } as const;
         }
       }
       if (!_.isNil(data.prompt_eval_count) || !_.isNil(data.eval_count)) {
-        usage = {
-          prompt_tokens: data.prompt_eval_count ?? 0,
-          completion_tokens: data.eval_count ?? 0,
-          total_tokens: (data.prompt_eval_count ?? 0) + (data.eval_count ?? 0),
-        };
+        yield {
+          type: 'usage',
+          usage: {
+            prompt_tokens: data.prompt_eval_count,
+            completion_tokens: data.eval_count,
+            total_tokens: (data.prompt_eval_count ?? 0) + (data.eval_count ?? 0),
+          },
+        } as const;
       }
     }
-
-    if (!_.isEmpty(calls)) {
-      yield {
-        tool_calls: calls.map(call => ({
-          id: call.id,
-          name: call.name,
-          arguments: call.arguments,
-        })),
-      };
-    }
-
-    if (usage) yield { usage };
   }
 };
