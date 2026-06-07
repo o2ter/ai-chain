@@ -50,7 +50,7 @@ export class AnthropicProvider extends ClientProvider {
     throw new Error('Anthropic API does not support embeddings');
   }
 
-  async *chatStream({
+  async *chat({
     model,
     systemMessage,
     messages,

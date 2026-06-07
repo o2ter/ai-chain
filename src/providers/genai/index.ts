@@ -70,7 +70,7 @@ export class GoogleGenAIProvider extends ClientProvider {
     };
   }
 
-  async* chatStream({
+  async* chat({
     model,
     systemMessage,
     messages,

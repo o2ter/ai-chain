@@ -58,7 +58,7 @@ export class OpenAIProvider extends ClientProvider {
     };
   }
 
-  async* chatStream({
+  async* chat({
     model,
     systemMessage,
     messages,

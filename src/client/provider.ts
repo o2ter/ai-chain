@@ -32,5 +32,5 @@ export abstract class ClientProvider {
 
   abstract embeddings(options: EmbedOptions): Promise<EmbedResponse>;
 
-  abstract chatStream(options: ChatOptions): AsyncGenerator<ChatResponseChunk>;
+  abstract chat(options: ChatOptions): AsyncGenerator<ChatResponseChunk>;
 };

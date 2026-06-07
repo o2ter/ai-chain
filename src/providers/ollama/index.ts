@@ -66,7 +66,7 @@ export class OllamaProvider extends ClientProvider {
     };
   }
 
-  async* chatStream({
+  async* chat({
     model,
     systemMessage,
     messages,
