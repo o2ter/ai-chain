@@ -62,10 +62,10 @@ export class OpenAIProvider extends ClientProvider {
     const { role, content } = message;
     switch (role) {
       case 'user':
-        return { role, content };
+        return { role: 'user', content };
       case 'assistant':
         return {
-          role,
+          role: 'assistant',
           content,
           [this.reasoningKey]: message.reasoning,
           tool_calls: message.tool_calls?.map(call => ({
@@ -79,7 +79,7 @@ export class OpenAIProvider extends ClientProvider {
         };
       case 'tool':
         return {
-          role,
+          role: 'tool',
           content,
           tool_call_id: message.tool_call_id,
         };

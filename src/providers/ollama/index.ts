@@ -71,7 +71,7 @@ export class OllamaProvider extends ClientProvider {
     switch (role) {
       case 'user':
         return {
-          role,
+          role: 'user',
           content: _.isString(content)
             ? content
             : content.filter(c => c.type === 'text').map(c => 'text' in c ? c.text : '').join('\n'),
@@ -91,7 +91,7 @@ export class OllamaProvider extends ClientProvider {
         };
       case 'tool':
         return {
-          role,
+          role: 'tool',
           content,
           tool_name: message.tool_call_id,
         };
