@@ -128,9 +128,9 @@ export class GoogleGenAIProvider extends ClientProvider {
         arguments: call.args,
       })),
       usage: {
-        completion_tokens: completion_tokens || undefined,
-        prompt_tokens: prompt_tokens || undefined,
-        total_tokens: total_tokens || undefined,
+        completion_tokens: completion_tokens,
+        prompt_tokens: prompt_tokens,
+        total_tokens: total_tokens,
         reasoning_tokens: response.usageMetadata?.thoughtsTokenCount,
         cached_tokens: response.usageMetadata?.cachedContentTokenCount,
       },
@@ -143,43 +143,38 @@ export class GoogleGenAIProvider extends ClientProvider {
       ...this.#createChatParams(options),
     });
 
-    let usage;
-    const calls: {
-      id: string;
-      name: string;
-      arguments: any;
-    }[] = [];
+    const now = Date.now();
+    const toolCallIds = new Map<number, string>();
 
-    for await (const { text: content, functionCalls, usageMetadata: _usage } of response) {
-      if (content) yield { content };
-      if (_usage) usage = _usage;
+    for await (const { text: content, functionCalls, usageMetadata: usage } of response) {
+      if (content) yield { type: 'content', content } as const;
+      if (usage) {
+        const total_tokens = usage.totalTokenCount ?? 0;
+        const prompt_tokens = usage.promptTokenCount ?? 0;
+        const completion_tokens = total_tokens - prompt_tokens;
+
+        yield {
+          type: 'usage',
+          usage: {
+            completion_tokens: completion_tokens,
+            prompt_tokens: prompt_tokens,
+            total_tokens: total_tokens,
+            reasoning_tokens: usage.thoughtsTokenCount,
+            cached_tokens: usage.cachedContentTokenCount,
+          },
+        } as const;
+      }
       if (functionCalls) {
         for (const [index, call] of functionCalls.entries()) {
-          calls[index] = {
-            id: call.id || calls[index]?.id || '',
-            name: call.name ?? calls[index]?.name ?? '',
-            arguments: call.args ?? calls[index]?.arguments ?? {},
-          };
+          if (!toolCallIds.has(index)) toolCallIds.set(index, call.id ?? `tool-${now}-${index}`);
+          yield {
+            type: 'tool_call',
+            tool_call_id: toolCallIds.get(index)!,
+            name: call.name,
+            arguments: call.args as any,
+          } as const;
         }
       }
-    }
-
-    if (!_.isEmpty(calls)) yield { tool_calls: calls };
-
-    if (usage) {
-      const total_tokens = usage.totalTokenCount ?? 0;
-      const prompt_tokens = usage.promptTokenCount ?? 0;
-      const completion_tokens = total_tokens - prompt_tokens;
-
-      yield {
-        usage: {
-          completion_tokens: completion_tokens || undefined,
-          prompt_tokens: prompt_tokens || undefined,
-          total_tokens: total_tokens || undefined,
-          reasoning_tokens: usage.thoughtsTokenCount,
-          cached_tokens: usage.cachedContentTokenCount,
-        },
-      };
     }
   }
 };
