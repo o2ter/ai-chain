@@ -70,15 +70,16 @@ export class GoogleGenAIProvider extends ClientProvider {
     };
   }
 
-  #createChatParams({
+  async* chatStream({
     model,
     systemMessage,
     messages,
     tools,
     signal,
     ...options
-  }: GoogleGenAIChatConfig): GoogleGenAIChatParams {
-    return {
+  }: GoogleGenAIChatConfig) {
+
+    const response = await this.client.models.generateContentStream({
       model,
       contents: _.compact(messages.map(msg => {
         const { role, content } = msg;
@@ -96,6 +97,7 @@ export class GoogleGenAIProvider extends ClientProvider {
         }
       })),
       config: {
+        ...options,
         abortSignal: signal,
         systemInstruction: systemMessage,
         tools: [{
@@ -105,15 +107,7 @@ export class GoogleGenAIProvider extends ClientProvider {
             parameters: tool.parameters,
           })),
         }],
-        ...options,
       },
-    };
-  }
-
-  async* chatStream(options: GoogleGenAIChatConfig) {
-
-    const response = await this.client.models.generateContentStream({
-      ...this.#createChatParams(options),
     });
 
     const now = Date.now();

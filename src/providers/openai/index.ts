@@ -58,14 +58,21 @@ export class OpenAIProvider extends ClientProvider {
     };
   }
 
-  #createChatParams({
+  async* chatStream({
     model,
     systemMessage,
     messages,
     tools,
+    signal,
     ...options
-  }: OpenAIChatConfig): Omit<_OpenAIChatConfig, 'stream'> {
-    return {
+  }: OpenAIChatConfig) {
+
+    const response = await this.client.chat.completions.create({
+      ...options,
+      stream: true,
+      stream_options: {
+        include_usage: true,
+      },
       model,
       messages: _.compact([
         systemMessage && { role: 'system', content: systemMessage },
@@ -105,18 +112,6 @@ export class OpenAIProvider extends ClientProvider {
           parameters: tool.parameters,
         },
       })) : undefined,
-      ...options,
-    };
-  }
-
-  async* chatStream({ signal, ...options }: OpenAIChatConfig) {
-
-    const response = await this.client.chat.completions.create({
-      ...this.#createChatParams(options),
-      stream: true,
-      stream_options: {
-        include_usage: true,
-      },
     }, { signal });
 
     const now = Date.now();

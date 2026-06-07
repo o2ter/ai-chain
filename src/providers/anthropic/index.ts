@@ -50,14 +50,17 @@ export class AnthropicProvider extends ClientProvider {
     throw new Error('Anthropic API does not support embeddings');
   }
 
-  #createChatParams({
+  async *chatStream({
     model,
     systemMessage,
     messages,
     tools,
+    signal,
     ...options
-  }: AnthropicChatConfig): _AnthropicChatConfig {
-    return {
+  }: AnthropicChatConfig) {
+    const stream = await this.client.messages.create({
+      ...options,
+      stream: true,
       model,
       system: systemMessage,
       messages: messages.map(msg => {
@@ -73,14 +76,6 @@ export class AnthropicProvider extends ClientProvider {
         description: tool.description,
         input_schema: tool.parameters,
       })) : undefined,
-      ...options
-    };
-  }
-
-  async *chatStream({ signal, ...options }: AnthropicChatConfig) {
-    const stream = await this.client.messages.create({
-      ...this.#createChatParams(options),
-      stream: true,
     }, { stream: true, signal });
 
     let usage;

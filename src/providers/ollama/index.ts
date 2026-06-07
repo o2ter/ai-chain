@@ -66,14 +66,18 @@ export class OllamaProvider extends ClientProvider {
     };
   }
 
-  #createChatParams({
+  async* chatStream({
     model,
     systemMessage,
     messages,
     tools,
+    signal,
     ...options
-  }: OllamaChatConfig): Omit<_OllamaChatConfig, 'stream'> {
-    return {
+  }: OllamaChatConfig) {
+
+    const response = await this.client.chat({
+      ...options,
+      stream: true,
       model,
       messages: _.compact([
         systemMessage && { role: 'system', content: systemMessage },
@@ -111,15 +115,6 @@ export class OllamaProvider extends ClientProvider {
           parameters: tool.parameters,
         },
       })) : undefined,
-      ...options,
-    };
-  }
-
-  async* chatStream({ signal, ...options }: OllamaChatConfig) {
-
-    const response = await this.client.chat({
-      ...this.#createChatParams(options),
-      stream: true,
     });
 
     const now = Date.now();
