@@ -165,6 +165,9 @@ export class AnthropicProvider extends ClientProvider {
               break;
           }
           break;
+        case 'content_block_stop':
+          currentToolId = undefined;
+          break;
         case 'message_start':
           usage = part.message.usage;
           break;
