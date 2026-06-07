@@ -66,7 +66,7 @@ export class OllamaProvider extends ClientProvider {
     };
   }
 
-  #convertMessage(message: ChatOptions['messages'][number]): NonNullable<_OllamaChatConfig['messages']>[number] {
+  async #convertMessage(message: ChatOptions['messages'][number]): Promise<NonNullable<_OllamaChatConfig['messages']>[number]> {
     const { role, content } = message;
     switch (role) {
       case 'user':
@@ -75,7 +75,22 @@ export class OllamaProvider extends ClientProvider {
           content: _.isString(content)
             ? content
             : content.filter(c => c.type === 'text').map(c => 'text' in c ? c.text : '').join('\n'),
-          images: _.isString(content) ? undefined : content.filter(c => c.type === 'image_url').map(c => 'image_url' in c ? c.image_url.url : ''),
+          images: _.isString(content)
+            ? undefined
+            : await Promise.all(content.filter(c => c.type === 'image_url').map(async c => {
+              const url = c.image_url.url;
+              const matches = url.match(/^data:([^;]+);base64,(.+)$/);
+              if (matches) {
+                return matches[2];
+              } else {
+                const response = await fetch(url);
+                if (!response.ok) {
+                  throw new Error(`Failed to fetch URL: ${response.statusText}`);
+                }
+                const arrayBuffer = await response.arrayBuffer();
+                return Buffer.from(arrayBuffer).toString('base64');
+              };
+            })),
         };
       case 'assistant':
         return {
