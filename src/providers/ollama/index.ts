@@ -70,7 +70,12 @@ export class OllamaProvider extends ClientProvider {
     const { role, content } = message;
     switch (role) {
       case 'user':
-        return { role, content };
+        return {
+          role,
+          content: _.isString(content)
+            ? content
+            : content.filter(c => c.type === 'text').map(c => 'text' in c ? c.text : '').join('\n'),
+        };
       case 'assistant':
         return {
           role: 'model',
