@@ -110,26 +110,25 @@ export class AnthropicProvider extends ClientProvider {
     }, { stream: true, signal });
 
     let usage;
-    const calls: {
-      id: string;
-      name: string;
-      arguments: string;
-    }[] = [];
-    let currentToolCall;
+    let currentToolId: string | undefined;
 
     for await (const part of stream) {
       switch (part.type) {
         case 'content_block_delta':
           switch (part.delta.type) {
             case 'thinking_delta':
-              yield { reasoning: part.delta.thinking };
+              yield { type: 'reasoning', reasoning: part.delta.thinking } as const;
               break;
             case 'text_delta':
-              yield { content: part.delta.text };
+              yield { type: 'content', content: part.delta.text } as const;
               break;
             case 'input_json_delta':
-              if (currentToolCall) {
-                currentToolCall.arguments += part.delta.partial_json;
+              if (currentToolId) {
+                yield {
+                  type: 'tool_call',
+                  tool_call_id: currentToolId,
+                  arguments: part.delta.partial_json,
+                } as const;
               }
               break;
             default:
@@ -139,12 +138,12 @@ export class AnthropicProvider extends ClientProvider {
         case 'content_block_start':
           switch (part.content_block.type) {
             case 'tool_use':
-              currentToolCall = {
-                id: part.content_block.id,
+              currentToolId = part.content_block.id;
+              yield {
+                type: 'tool_call',
+                tool_call_id: currentToolId,
                 name: part.content_block.name,
-                arguments: '',
-              };
-              calls.push(currentToolCall);
+              } as const;
               break;
             default:
               break;
@@ -160,5 +159,15 @@ export class AnthropicProvider extends ClientProvider {
       }
     }
 
+    if (usage) {
+      yield {
+        type: 'usage',
+        usage: {
+          completion_tokens: usage.output_tokens,
+          prompt_tokens: usage.input_tokens ?? 0,
+          total_tokens: (usage.input_tokens ?? 0) + usage.output_tokens,
+        },
+      } as const;
+    }
   }
 }
