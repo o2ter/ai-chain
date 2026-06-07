@@ -72,12 +72,12 @@ export class GoogleGenAIProvider extends ClientProvider {
 
   #createChatParams({
     model,
+    systemMessage,
     messages,
     tools,
     signal,
     ...options
   }: GoogleGenAIChatConfig): GoogleGenAIChatParams {
-    const systemInstruction = messages.filter(message => message.role === 'system');
     return {
       model,
       contents: _.compact(messages.map(msg => {
@@ -97,7 +97,7 @@ export class GoogleGenAIProvider extends ClientProvider {
       })),
       config: {
         abortSignal: signal,
-        systemInstruction: systemInstruction.map(message => message.content),
+        systemInstruction: systemMessage,
         tools: [{
           functionDeclarations: _.map(tools, tool => ({
             name: tool.name,

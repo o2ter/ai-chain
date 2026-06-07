@@ -47,17 +47,17 @@ export type EmbedResponse = {
   };
 };
 
-type ChatSystemMessage = {
-  role: 'system';
-  content: string;
-};
+type ContentPart =
+  | { type: 'text'; text: string }
+  | { type: 'image_url'; image_url: { url: string } };
+
 type ChatUserMessage = {
   role: 'user';
-  content: string;
+  content: string | ContentPart[];
 };
 type ChatAssistantMessage = {
   role: 'assistant';
-  content: string;
+  content: string | ContentPart[];
   reasoning?: string;
   tool_calls?: ToolCall[];
 };
@@ -68,13 +68,13 @@ type ChatToolMessage = {
 };
 
 type ChatMessage =
-  | ChatSystemMessage
   | ChatUserMessage
   | ChatAssistantMessage
   | ChatToolMessage;
 
 export type ChatOptions = {
   model: string;
+  systemMessage?: string;
   messages: ChatMessage[];
   tools?: {
     name: string;

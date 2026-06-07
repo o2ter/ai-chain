@@ -58,40 +58,43 @@ export class OpenAIProvider extends ClientProvider {
 
   #createChatParams({
     model,
+    systemMessage,
     messages,
     tools,
     ...options
   }: OpenAIChatConfig): Omit<_OpenAIChatConfig, 'stream'> {
     return {
       model,
-      messages: messages.map(msg => {
-        const { role, content } = msg;
-        switch (role) {
-          case 'system':
-          case 'user':
-            return { role, content };
-          case 'assistant':
-            return {
-              role,
-              content,
-              thinking: msg.reasoning,
-              tool_calls: msg.tool_calls?.map(call => ({
-                id: call.id,
-                type: 'function',
-                function: {
-                  name: call.name,
-                  arguments: JSON.stringify(call.arguments),
-                },
-              })),
-            };
-          case 'tool':
-            return {
-              role,
-              content,
-              tool_call_id: msg.tool_call_id,
-            };
-        }
-      }),
+      messages: _.compact([
+        systemMessage && { role: 'system', content: systemMessage },
+        ...messages.map(msg => {
+          const { role, content } = msg;
+          switch (role) {
+            case 'user':
+              return { role, content };
+            case 'assistant':
+              return {
+                role,
+                content,
+                thinking: msg.reasoning,
+                tool_calls: msg.tool_calls?.map(call => ({
+                  id: call.id,
+                  type: 'function',
+                  function: {
+                    name: call.name,
+                    arguments: JSON.stringify(call.arguments),
+                  },
+                })),
+              };
+            case 'tool':
+              return {
+                role,
+                content,
+                tool_call_id: msg.tool_call_id,
+              };
+          }
+        }),
+      ]),
       tools: tools ? _.map(tools, tool => ({
         type: 'function',
         function: {
