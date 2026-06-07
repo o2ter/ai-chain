@@ -96,3 +96,9 @@ export type ChatResponse = {
     cached_tokens?: number;
   };
 };
+
+export type ChatResponseChunk =
+  | { type: 'content'; content: string | ContentPart[] }
+  | { type: 'reasoning'; reasoning: string }
+  | { type: 'tool_call'; tool_call_id: string; name?: string; arguments?: string }
+  | { type: 'usage'; usage: NonNullable<ChatResponse['usage']> };

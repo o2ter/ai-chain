@@ -36,10 +36,12 @@ type OpenAIChatConfig = Omit<_OpenAIChatConfig, keyof ChatOptions | 'stream'> & 
 export class OpenAIProvider extends ClientProvider {
 
   client: OpenAI;
+  reasoningKey: string;
 
-  constructor(options: ClientOptions) {
+  constructor({ reasoningKey, ...options }: ClientOptions & { reasoningKey?: string }) {
     super();
     this.client = new OpenAI(options);
+    this.reasoningKey = reasoningKey || 'reasoning_content';
   };
 
   async* models() {
@@ -76,7 +78,7 @@ export class OpenAIProvider extends ClientProvider {
               return {
                 role,
                 content,
-                thinking: msg.reasoning,
+                [this.reasoningKey]: msg.reasoning,
                 tool_calls: msg.tool_calls?.map(call => ({
                   id: call.id,
                   type: 'function',
@@ -117,6 +119,7 @@ export class OpenAIProvider extends ClientProvider {
 
     return {
       content: message?.content ?? '',
+      reasoning: (message as any)?.[this.reasoningKey],
       tool_calls: message?.tool_calls?.flatMap(call => call.type === 'function' ? ({
         id: call.id,
         name: call.function.name,
@@ -142,47 +145,37 @@ export class OpenAIProvider extends ClientProvider {
       },
     }, { signal });
 
-    let usage;
-    const calls: {
-      id: string;
-      name: string;
-      arguments: string;
-    }[] = [];
+    const now = Date.now();
+    const toolCallIds = new Map<number, string>();
 
-    for await (const { choices: [{ delta: { content, tool_calls } }] = [], usage: _usage } of response) {
-      if (content) yield { content };
-      if (usage) usage = _usage;
+    for await (const { choices: [{ delta }] = [], usage } of response) {
+      const { content, tool_calls } = delta;
+      const reasoning = (delta as any)?.[this.reasoningKey];
+      if (content) yield { type: 'content', content };
+      if (reasoning) yield { type: 'reasoning', reasoning };
+      if (usage) yield {
+        type: 'usage',
+        usage: {
+          completion_tokens: usage.completion_tokens,
+          prompt_tokens: usage.prompt_tokens,
+          total_tokens: usage.total_tokens,
+          reasoning_tokens: usage.completion_tokens_details?.reasoning_tokens,
+          cached_tokens: usage.prompt_tokens_details?.cached_tokens,
+        },
+      };
       if (tool_calls) {
-        for (const { type, index, id, function: call } of tool_calls) {
-          if (type === 'function') {
-            calls[index] = {
-              id: id || calls[index]?.id || '',
-              name: `${calls[index]?.name ?? ''}${call?.name ?? ''}`,
-              arguments: `${calls[index]?.arguments ?? ''}${call?.arguments ?? ''}`,
+        for (const { type, id, index, function: call } of tool_calls) {
+          if (type === 'function' && call) {
+            if (!toolCallIds.has(index)) toolCallIds.set(index, id ?? `tool-${now}-${index}`);
+            yield {
+              type: 'tool_call',
+              tool_call_id: toolCallIds.get(index)!,
+              name: call.name,
+              arguments: call.arguments,
             };
           }
         }
       }
     }
-
-    if (!_.isEmpty(calls)) {
-      yield {
-        tool_calls: calls.map(call => ({
-          id: call.id,
-          name: call.name,
-          arguments: JSON.parse(call.arguments),
-        })),
-      };
-    }
-
-    if (usage) yield {
-      usage: {
-        completion_tokens: usage?.completion_tokens,
-        prompt_tokens: usage?.prompt_tokens,
-        total_tokens: usage?.total_tokens,
-        reasoning_tokens: usage?.completion_tokens_details?.reasoning_tokens,
-        cached_tokens: usage?.prompt_tokens_details?.cached_tokens,
-      },
-    };
   }
 };

@@ -109,8 +109,55 @@ export class AnthropicProvider extends ClientProvider {
       stream: true,
     }, { stream: true, signal });
 
+    let usage;
+    const calls: {
+      id: string;
+      name: string;
+      arguments: string;
+    }[] = [];
+    let currentToolCall;
+
     for await (const part of stream) {
-      
+      switch (part.type) {
+        case 'content_block_delta':
+          switch (part.delta.type) {
+            case 'thinking_delta':
+              yield { reasoning: part.delta.thinking };
+              break;
+            case 'text_delta':
+              yield { content: part.delta.text };
+              break;
+            case 'input_json_delta':
+              if (currentToolCall) {
+                currentToolCall.arguments += part.delta.partial_json;
+              }
+              break;
+            default:
+              break;
+          }
+          break;
+        case 'content_block_start':
+          switch (part.content_block.type) {
+            case 'tool_use':
+              currentToolCall = {
+                id: part.content_block.id,
+                name: part.content_block.name,
+                arguments: '',
+              };
+              calls.push(currentToolCall);
+              break;
+            default:
+              break;
+          }
+          break;
+        case 'message_start':
+          usage = part.message.usage;
+          break;
+        case 'message_delta':
+          usage = part.usage;
+          break;
+        default: break;
+      }
     }
 
   }

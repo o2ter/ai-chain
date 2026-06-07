@@ -24,7 +24,7 @@
 //
 
 import _ from 'lodash';
-import { ChatOptions, ChatResponse, EmbedOptions, EmbedResponse } from './types';
+import { ChatOptions, ChatResponse, ChatResponseChunk, EmbedOptions, EmbedResponse } from './types';
 
 export abstract class ClientProvider {
 
@@ -34,5 +34,5 @@ export abstract class ClientProvider {
 
   abstract chat(options: ChatOptions): Promise<ChatResponse>;
 
-  abstract chatStream(options: ChatOptions): AsyncGenerator<Partial<ChatResponse>>;
+  abstract chatStream(options: ChatOptions): AsyncGenerator<ChatResponseChunk>;
 };
