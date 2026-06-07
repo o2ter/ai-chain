@@ -24,11 +24,13 @@
 //
 
 import _ from 'lodash';
+import { AnthropicProvider } from '../providers/anthropic';
 import { OpenAIProvider } from '../providers/openai';
 import { OllamaProvider } from '../providers/ollama';
 import { GoogleGenAIProvider } from '../providers/genai';
 
 const providers = {
+  'anthropic': AnthropicProvider,
   'openai': OpenAIProvider,
   'ollama': OllamaProvider,
   'google-genai': GoogleGenAIProvider,
