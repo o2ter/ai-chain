@@ -24,7 +24,7 @@
 //
 
 import _ from 'lodash';
-import { Ollama, Config } from 'ollama';
+import { Ollama, Config, ToolCall } from 'ollama';
 import { ClientProvider } from '../../client/provider';
 import { ChatOptions, EmbedOptions } from '../../client/types';
 
@@ -146,16 +146,20 @@ export class OllamaProvider extends ClientProvider {
 
     let usage;
     const calls: {
+      id: string;
       name: string;
       arguments: any;
     }[] = [];
+
+    const now = Date.now();
 
     for await (const { message: { content, thinking, tool_calls }, ...data } of response) {
       if (content) yield { content: content };
       if (thinking) yield { reasoning: thinking };
       if (tool_calls) {
-        for (const [index, { function: call }] of tool_calls.entries()) {
+        for (const [index, { id, function: call }] of (tool_calls as (ToolCall & { id?: string })[]).entries()) {
           calls[index] = {
+            id: id ?? `tool-${now}-${index}`,
             name: call?.name ?? calls[index]?.name ?? '',
             arguments: call?.arguments ?? calls[index]?.arguments ?? {},
           };
@@ -173,7 +177,7 @@ export class OllamaProvider extends ClientProvider {
     if (!_.isEmpty(calls)) {
       yield {
         tool_calls: calls.map(call => ({
-          id: call.name,
+          id: call.id,
           name: call.name,
           arguments: call.arguments,
         })),
