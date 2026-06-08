@@ -24,6 +24,7 @@
 //
 
 import _ from 'lodash';
+import { EmbedOptions, ChatOptions } from './types';
 import { AnthropicProvider } from '../providers/anthropic';
 import { OpenAIProvider } from '../providers/openai';
 import { OllamaProvider } from '../providers/ollama';
@@ -38,8 +39,9 @@ const providers = {
 
 type Providers = typeof providers;
 type ProviderInstances = { [x in keyof Providers]: InstanceType<Providers[x]>; };
+type DefaultParameters<P, Default> = P extends {} ? P : Default;
 
-export class Client<P extends keyof Providers> {
+export class Client<P extends keyof Providers = any> {
 
   #provider: ProviderInstances[P];
 
@@ -51,11 +53,11 @@ export class Client<P extends keyof Providers> {
     return this.#provider.models();
   }
 
-  embeddings(options: Parameters<ProviderInstances[P]['embeddings']>[0]) {
+  embeddings(options: DefaultParameters<Parameters<ProviderInstances[P]['embeddings']>[0], EmbedOptions>) {
     return this.#provider.embeddings(options as any);
   }
 
-  chat(options: Parameters<ProviderInstances[P]['chat']>[0]) {
+  chat(options: DefaultParameters<Parameters<ProviderInstances[P]['chat']>[0], ChatOptions>) {
     return this.#provider.chat(options as any);
   }
 };
