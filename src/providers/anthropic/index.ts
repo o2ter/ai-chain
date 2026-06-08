@@ -89,7 +89,21 @@ export class AnthropicProvider extends ClientProvider {
             }),
         };
       case 'assistant':
-        return { role: 'assistant', content };
+        return {
+          role: 'assistant',
+          content: _.isEmpty(message.tool_calls) ? content : [
+            {
+              type: 'text',
+              text: content,
+            },
+            ..._.map(message.tool_calls, call => ({
+              type: 'tool_use',
+              id: call.id,
+              name: call.name,
+              input: call.arguments,
+            }) as const),
+          ],
+        };
       case 'tool':
         return {
           role: 'user',
