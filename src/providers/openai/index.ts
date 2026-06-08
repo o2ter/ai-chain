@@ -31,7 +31,7 @@ import { ChatOptions, EmbedOptions } from '../../client/types';
 type OpenAIEmbedConfig = Omit<Parameters<OpenAI['embeddings']['create']>[0], keyof EmbedOptions> & EmbedOptions;
 
 type _OpenAIChatConfig = Parameters<OpenAI['chat']['completions']['create']>[0];
-type OpenAIChatConfig = Omit<_OpenAIChatConfig, keyof ChatOptions | 'stream'> & ChatOptions;
+type OpenAIChatConfig = Omit<_OpenAIChatConfig, keyof ChatOptions | 'stream' | 'stream_options'> & ChatOptions;
 
 export class OpenAIProvider extends ClientProvider {
 

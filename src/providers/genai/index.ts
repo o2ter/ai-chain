@@ -31,7 +31,7 @@ import { ChatOptions, EmbedOptions } from '../../client/types';
 
 type GoogleGenAIChatParams = Parameters<GoogleGenAI['models']['generateContent']>[0];
 type _GoogleGenAIChatConfig = NonNullable<GoogleGenAIChatParams['config']>;
-type GoogleGenAIChatConfig = Omit<_GoogleGenAIChatConfig, 'tools' | 'systemInstruction'> & ChatOptions;
+type GoogleGenAIChatConfig = Omit<_GoogleGenAIChatConfig, 'tools' | 'systemInstruction' | 'abortSignal'> & ChatOptions;
 
 export class GoogleGenAIProvider extends ClientProvider {
 

@@ -29,7 +29,7 @@ import { ClientProvider } from '../../client/provider';
 import { ChatOptions, EmbedOptions } from '../../client/types';
 
 type _AnthropicChatConfig = Parameters<Anthropic['messages']['create']>[0];
-type AnthropicChatConfig = Omit<_AnthropicChatConfig, keyof ChatOptions | 'stream'> & ChatOptions;
+type AnthropicChatConfig = Omit<_AnthropicChatConfig, keyof ChatOptions | 'stream' | 'system'> & ChatOptions;
 
 export class AnthropicProvider extends ClientProvider {
 
