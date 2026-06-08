@@ -23,7 +23,7 @@
 //  THE SOFTWARE.
 //
 
-type ToolCall = {
+export type ToolCall = {
   id: string;
   name: string;
   arguments: any;
@@ -47,45 +47,47 @@ export type EmbedResponse = {
   };
 };
 
-type ContentPart =
+export type ContentPart =
   | { type: 'text'; text: string }
   | { type: 'image_url'; image_url: { url: string } };
 
-type ChatUserMessage = {
+export type ChatUserMessage = {
   role: 'user';
   content: string | ContentPart[];
 };
-type ChatAssistantMessage = {
+export type ChatAssistantMessage = {
   role: 'assistant';
   content: string;
   reasoning?: string;
   tool_calls?: ToolCall[];
 };
-type ChatToolMessage = {
+export type ChatToolMessage = {
   role: 'tool';
   content: string;
   tool_call_id: string;
   name: string;
 };
 
-type ChatMessage =
+export type ChatMessage =
   | ChatUserMessage
   | ChatAssistantMessage
   | ChatToolMessage;
+
+export type ChatTool = {
+  name: string;
+  description: string;
+  parameters?: any;
+};
 
 export type ChatOptions = {
   model: string;
   systemMessage?: string;
   messages: ChatMessage[];
-  tools?: {
-    name: string;
-    description: string;
-    parameters?: any;
-  }[];
+  tools?: ChatTool[];
   signal?: AbortSignal;
 };
 
-type ChatResponseUsage = {
+export type ChatResponseUsage = {
   completion_tokens?: number;
   prompt_tokens?: number;
   total_tokens?: number;
