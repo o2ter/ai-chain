@@ -121,7 +121,8 @@ export class OpenAIProvider extends ClientProvider {
     const now = Date.now();
     const toolCallIds = new Map<number, string>();
 
-    for await (const { choices: [{ delta }] = [], usage } of response) {
+    for await (const { choices: [{ delta } = {}] = [], usage } of response) {
+      if (!delta) continue;
       const { content, tool_calls } = delta;
       const reasoning = (delta as any)?.[this.reasoningKey];
       if (content) yield { type: 'content', content } as const;
