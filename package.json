@@ -7,11 +7,11 @@
   "exports": {
     ".": {
       "types": "./dist/index.mjs",
-      "default": "./dist/index"
+      "default": "./dist/index.js"
     },
     "./*": {
       "types": "./dist/*.mjs",
-      "default": "./dist/*"
+      "default": "./dist/*.js"
     }
   },
   "files": [
