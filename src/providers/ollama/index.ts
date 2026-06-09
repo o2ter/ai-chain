@@ -145,18 +145,21 @@ export class OllamaProvider extends ClientProvider {
 
     const now = Date.now();
     const toolCallIds = new Map<number, string>();
+    let counter = 0;
 
     for await (const { message: { content, thinking, tool_calls }, ...data } of response) {
       if (content) yield { type: 'content', content } as const;
       if (thinking) yield { type: 'reasoning', reasoning: thinking } as const;
       if (tool_calls) {
-        for (const [index, { id, function: call }] of (tool_calls as (ToolCall & { id?: string })[]).entries()) {
+        const _tool_calls: (ToolCall & { id?: string; function: { index?: number; } })[] = tool_calls;
+        for (const { id, function: call } of _tool_calls) {
+          const index = call.index ?? counter++;
           if (!toolCallIds.has(index)) toolCallIds.set(index, id ?? `tool-${now}-${index}`);
           yield {
             type: 'tool_call',
             tool_call_id: toolCallIds.get(index)!,
             name: call.name,
-            arguments: call.arguments as any,
+            arguments: _.isString(call.arguments) ? call.arguments : JSON.stringify(call.arguments),
           } as const;
         }
       }
