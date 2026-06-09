@@ -139,15 +139,16 @@ export class OpenAIProvider extends ClientProvider {
       } as const;
       if (tool_calls) {
         for (const { type, id, index, function: call } of tool_calls) {
-          if (type === 'function' && call) {
-            if (!toolCallIds.has(index)) toolCallIds.set(index, id ?? `tool-${now}-${index}`);
-            yield {
-              type: 'tool_call',
-              tool_call_id: toolCallIds.get(index)!,
-              name: call.name,
-              arguments: call.arguments,
-            } as const;
+          if (!toolCallIds.has(index)) {
+            if (type !== 'function') continue;
+            toolCallIds.set(index, id ?? `tool-${now}-${index}`);
           }
+          yield {
+            type: 'tool_call',
+            tool_call_id: toolCallIds.get(index)!,
+            name: call?.name,
+            arguments: call?.arguments,
+          } as const;
         }
       }
     }
