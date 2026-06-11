@@ -172,8 +172,9 @@ export class GoogleGenAIProvider extends ClientProvider {
 
     const now = Date.now();
     const toolCallIds = new Map<number, string>();
+    let usage;
 
-    for await (const { text: content, functionCalls, usageMetadata: usage } of response) {
+    for await (const { text: content, functionCalls, usageMetadata } of response) {
       if (content) yield { type: 'content', content } as const;
       if (functionCalls) {
         for (const [index, call] of functionCalls.entries()) {
@@ -186,22 +187,22 @@ export class GoogleGenAIProvider extends ClientProvider {
           } as const;
         }
       }
-      if (usage) {
-        const total_tokens = usage.totalTokenCount ?? 0;
-        const prompt_tokens = usage.promptTokenCount ?? 0;
+      if (usageMetadata) {
+        const total_tokens = usageMetadata.totalTokenCount ?? 0;
+        const prompt_tokens = usageMetadata.promptTokenCount ?? 0;
         const completion_tokens = total_tokens - prompt_tokens;
-
-        yield {
-          type: 'usage',
-          usage: {
-            completion_tokens: completion_tokens,
-            prompt_tokens: prompt_tokens,
-            total_tokens: total_tokens,
-            reasoning_tokens: usage.thoughtsTokenCount,
-            cached_tokens: usage.cachedContentTokenCount,
-          },
-        } as const;
+        usage = {
+          completion_tokens: completion_tokens,
+          prompt_tokens: prompt_tokens,
+          total_tokens: total_tokens,
+          reasoning_tokens: usageMetadata.thoughtsTokenCount,
+          cached_tokens: usageMetadata.cachedContentTokenCount,
+        };
       }
+    }
+
+    if (usage) {
+      yield { type: 'usage', usage } as const;
     }
   }
 };

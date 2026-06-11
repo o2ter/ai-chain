@@ -146,6 +146,7 @@ export class OllamaProvider extends ClientProvider {
     const now = Date.now();
     const toolCallIds = new Map<number, string>();
     let counter = 0;
+    let usage;
 
     for await (const { message: { content, thinking, tool_calls }, ...data } of response) {
       if (content) yield { type: 'content', content } as const;
@@ -164,15 +165,16 @@ export class OllamaProvider extends ClientProvider {
         }
       }
       if (!_.isNil(data.prompt_eval_count) || !_.isNil(data.eval_count)) {
-        yield {
-          type: 'usage',
-          usage: {
-            prompt_tokens: data.prompt_eval_count,
-            completion_tokens: data.eval_count,
-            total_tokens: (data.prompt_eval_count ?? 0) + (data.eval_count ?? 0),
-          },
-        } as const;
+        usage = {
+          prompt_tokens: data.prompt_eval_count,
+          completion_tokens: data.eval_count,
+          total_tokens: (data.prompt_eval_count ?? 0) + (data.eval_count ?? 0),
+        };
       }
+    }
+
+    if (usage) {
+      yield { type: 'usage', usage } as const;
     }
   }
 };

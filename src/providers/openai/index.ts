@@ -120,8 +120,9 @@ export class OpenAIProvider extends ClientProvider {
 
     const now = Date.now();
     const toolCallIds = new Map<number, string>();
+    let usage;
 
-    for await (const { choices: [{ delta } = {}] = [], usage } of response) {
+    for await (const { choices: [{ delta } = {}] = [], usage: _usage } of response) {
       if (delta) {
         const { content, tool_calls } = delta;
         const reasoning = (delta as any)?.[this.reasoningKey];
@@ -142,16 +143,19 @@ export class OpenAIProvider extends ClientProvider {
           }
         }
       }
-      if (usage) yield {
-        type: 'usage',
-        usage: {
-          completion_tokens: usage.completion_tokens,
-          prompt_tokens: usage.prompt_tokens,
-          total_tokens: usage.total_tokens,
-          reasoning_tokens: usage.completion_tokens_details?.reasoning_tokens,
-          cached_tokens: usage.prompt_tokens_details?.cached_tokens,
-        },
-      } as const;
+      if (_usage) {
+        usage = {
+          completion_tokens: _usage.completion_tokens,
+          prompt_tokens: _usage.prompt_tokens,
+          total_tokens: _usage.total_tokens,
+          reasoning_tokens: _usage.completion_tokens_details?.reasoning_tokens,
+          cached_tokens: _usage.prompt_tokens_details?.cached_tokens,
+        };
+      }
+    }
+
+    if (usage) {
+      yield { type: 'usage', usage } as const;
     }
   }
 };
