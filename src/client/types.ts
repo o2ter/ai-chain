@@ -26,7 +26,7 @@
 export type ToolCall = {
   id: string;
   name: string;
-  arguments: any;
+  arguments: string;
 };
 
 export type EmbedOptions = {

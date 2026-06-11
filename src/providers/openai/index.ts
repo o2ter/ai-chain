@@ -73,7 +73,7 @@ export class OpenAIProvider extends ClientProvider {
             type: 'function',
             function: {
               name: call.name,
-              arguments: JSON.stringify(call.arguments),
+              arguments: call.arguments,
             },
           })),
         };

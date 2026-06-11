@@ -101,7 +101,7 @@ export class OllamaProvider extends ClientProvider {
             id: call.id,
             function: {
               name: call.name,
-              arguments: call.arguments,
+              arguments: JSON.parse(call.arguments),
             },
           })),
         };
