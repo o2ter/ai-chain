@@ -175,6 +175,17 @@ export class GoogleGenAIProvider extends ClientProvider {
 
     for await (const { text: content, functionCalls, usageMetadata: usage } of response) {
       if (content) yield { type: 'content', content } as const;
+      if (functionCalls) {
+        for (const [index, call] of functionCalls.entries()) {
+          if (!toolCallIds.has(index)) toolCallIds.set(index, call.id ?? `tool-${now}-${index}`);
+          yield {
+            type: 'tool_call',
+            tool_call_id: toolCallIds.get(index)!,
+            name: call.name,
+            arguments: call.args as any,
+          } as const;
+        }
+      }
       if (usage) {
         const total_tokens = usage.totalTokenCount ?? 0;
         const prompt_tokens = usage.promptTokenCount ?? 0;
@@ -190,17 +201,6 @@ export class GoogleGenAIProvider extends ClientProvider {
             cached_tokens: usage.cachedContentTokenCount,
           },
         } as const;
-      }
-      if (functionCalls) {
-        for (const [index, call] of functionCalls.entries()) {
-          if (!toolCallIds.has(index)) toolCallIds.set(index, call.id ?? `tool-${now}-${index}`);
-          yield {
-            type: 'tool_call',
-            tool_call_id: toolCallIds.get(index)!,
-            name: call.name,
-            arguments: call.args as any,
-          } as const;
-        }
       }
     }
   }
