@@ -122,11 +122,26 @@ export class OpenAIProvider extends ClientProvider {
     const toolCallIds = new Map<number, string>();
 
     for await (const { choices: [{ delta } = {}] = [], usage } of response) {
-      if (!delta) continue;
-      const { content, tool_calls } = delta;
-      const reasoning = (delta as any)?.[this.reasoningKey];
-      if (content) yield { type: 'content', content } as const;
-      if (reasoning) yield { type: 'reasoning', reasoning } as const;
+      if (delta) {
+        const { content, tool_calls } = delta;
+        const reasoning = (delta as any)?.[this.reasoningKey];
+        if (content) yield { type: 'content', content } as const;
+        if (reasoning) yield { type: 'reasoning', reasoning } as const;
+        if (tool_calls) {
+          for (const { type, id, index, function: call } of tool_calls) {
+            if (!toolCallIds.has(index)) {
+              if (type !== 'function') continue;
+              toolCallIds.set(index, id ?? `tool-${now}-${index}`);
+            }
+            yield {
+              type: 'tool_call',
+              tool_call_id: toolCallIds.get(index)!,
+              name: call?.name,
+              arguments: call?.arguments,
+            } as const;
+          }
+        }
+      }
       if (usage) yield {
         type: 'usage',
         usage: {
@@ -137,20 +152,6 @@ export class OpenAIProvider extends ClientProvider {
           cached_tokens: usage.prompt_tokens_details?.cached_tokens,
         },
       } as const;
-      if (tool_calls) {
-        for (const { type, id, index, function: call } of tool_calls) {
-          if (!toolCallIds.has(index)) {
-            if (type !== 'function') continue;
-            toolCallIds.set(index, id ?? `tool-${now}-${index}`);
-          }
-          yield {
-            type: 'tool_call',
-            tool_call_id: toolCallIds.get(index)!,
-            name: call?.name,
-            arguments: call?.arguments,
-          } as const;
-        }
-      }
     }
   }
 };
