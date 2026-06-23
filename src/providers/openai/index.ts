@@ -80,7 +80,7 @@ export class OpenAIProvider extends ClientProvider {
       case 'tool':
         return {
           role: 'tool',
-          content,
+          content: content as any,
           tool_call_id: message.tool_call_id,
         };
       default:

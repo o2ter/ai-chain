@@ -63,7 +63,7 @@ export type ChatAssistantMessage = {
 };
 export type ChatToolMessage = {
   role: 'tool';
-  content: string;
+  content: string | ContentPart[];
   tool_call_id: string;
   name: string;
 };

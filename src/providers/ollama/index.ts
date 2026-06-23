@@ -26,7 +26,7 @@
 import _ from 'lodash';
 import { Ollama, Config, ToolCall } from 'ollama';
 import { ClientProvider } from '../../client/provider';
-import { ChatOptions, EmbedOptions } from '../../client/types';
+import { ChatOptions, ContentPart, EmbedOptions } from '../../client/types';
 
 type OllamaEmbedConfig = Omit<Parameters<Ollama['embed']>[0], keyof EmbedOptions> & EmbedOptions;
 
@@ -68,29 +68,34 @@ export class OllamaProvider extends ClientProvider {
 
   async #convertMessage(message: ChatOptions['messages'][number]): Promise<NonNullable<_OllamaChatConfig['messages']>[number]> {
     const { role, content } = message;
+    const encodeContent = (content: string | ContentPart[]): string => {
+      if (_.isString(content)) return content;
+      return content.filter(c => c.type === 'text').map(c => 'text' in c ? c.text : '').join('\n');
+    };
+    const fetchImages = async (content: string | ContentPart[]): Promise<string[] | undefined> => {
+      if (_.isString(content)) return undefined;
+      const images = content.filter(c => c.type === 'image_url').map(async c => {
+        const url = c.image_url.url;
+        const matches = url.match(/^data:([^;]+);base64,(.+)$/);
+        if (matches) {
+          return matches[2];
+        } else {
+          const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch URL: ${response.statusText}`);
+          }
+          const arrayBuffer = await response.arrayBuffer();
+          return Buffer.from(arrayBuffer).toString('base64');
+        };
+      });
+      return _.isEmpty(images) ? undefined : Promise.all(images);
+    };
     switch (role) {
       case 'user':
         return {
           role: 'user',
-          content: _.isString(content)
-            ? content
-            : content.filter(c => c.type === 'text').map(c => 'text' in c ? c.text : '').join('\n'),
-          images: _.isString(content)
-            ? undefined
-            : await Promise.all(content.filter(c => c.type === 'image_url').map(async c => {
-              const url = c.image_url.url;
-              const matches = url.match(/^data:([^;]+);base64,(.+)$/);
-              if (matches) {
-                return matches[2];
-              } else {
-                const response = await fetch(url);
-                if (!response.ok) {
-                  throw new Error(`Failed to fetch URL: ${response.statusText}`);
-                }
-                const arrayBuffer = await response.arrayBuffer();
-                return Buffer.from(arrayBuffer).toString('base64');
-              };
-            })),
+          content: encodeContent(content),
+          images: await fetchImages(content),
         };
       case 'assistant':
         return {
@@ -108,7 +113,8 @@ export class OllamaProvider extends ClientProvider {
       case 'tool':
         return {
           role: 'tool',
-          content,
+          content: encodeContent(content),
+          images: await fetchImages(content),
           tool_name: message.name,
         };
       default:
