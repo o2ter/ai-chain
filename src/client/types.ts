@@ -49,7 +49,7 @@ export type EmbedResponse = {
 
 export type ContentPart =
   | { type: 'text'; text: string }
-  | { type: 'image_url'; image_url: { url: string } };
+  | { type: 'image'; image: { url: string } };
 
 export type ChatUserMessage = {
   role: 'user';

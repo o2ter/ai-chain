@@ -72,10 +72,10 @@ export class OllamaProvider extends ClientProvider {
       if (_.isString(content)) return content;
       return content.filter(c => c.type === 'text').map(c => 'text' in c ? c.text : '').join('\n');
     };
-    const fetchImages = async (content: string | ContentPart[]): Promise<string[] | undefined> => {
+    const fetchImages = async (content: string | ContentPart[]) => {
       if (_.isString(content)) return undefined;
-      const images = content.filter(c => c.type === 'image_url').map(async c => {
-        const url = c.image_url.url;
+      const images = content.filter(c => c.type === 'image').map(async c => {
+        const url = c.image.url;
         const matches = url.match(/^data:([^;]+);base64,(.+)$/);
         if (matches) {
           return matches[2];

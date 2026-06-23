@@ -26,7 +26,7 @@
 import _ from 'lodash';
 import OpenAI, { ClientOptions } from 'openai';
 import { ClientProvider } from '../../client/provider';
-import { ChatOptions, EmbedOptions } from '../../client/types';
+import { ChatOptions, ContentPart, EmbedOptions } from '../../client/types';
 
 type OpenAIEmbedConfig = Omit<Parameters<OpenAI['embeddings']['create']>[0], keyof EmbedOptions> & EmbedOptions;
 
@@ -60,9 +60,25 @@ export class OpenAIProvider extends ClientProvider {
 
   #convertMessage(message: ChatOptions['messages'][number]): _OpenAIChatConfig['messages'][number] {
     const { role, content } = message;
+    const encodeContent = (content: string | ContentPart[]) => {
+      if (_.isString(content)) return content;
+      return content.map(c => {
+        switch (c.type) {
+          case 'text':
+            return { type: 'text', text: c.text } as const;
+          case 'image':
+            return { type: 'image_url', image_url: { url: c.image.url } } as const;
+          default:
+            throw new Error(`Unsupported content type: ${(c as any).type}`);
+        }
+      });
+    };
     switch (role) {
       case 'user':
-        return { role: 'user', content };
+        return {
+          role: 'user',
+          content: encodeContent(content),
+        };
       case 'assistant':
         return {
           role: 'assistant',
@@ -80,7 +96,7 @@ export class OpenAIProvider extends ClientProvider {
       case 'tool':
         return {
           role: 'tool',
-          content: content as any,
+          content: encodeContent(content) as any,
           tool_call_id: message.tool_call_id,
         };
       default:

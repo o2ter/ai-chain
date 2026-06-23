@@ -53,14 +53,14 @@ export class AnthropicProvider extends ClientProvider {
 
   #convertMessage(message: ChatOptions['messages'][number]): _AnthropicChatConfig['messages'][number] {
     const { role, content } = message;
-    const encodeContent = (content: string | ContentPart[]): string | Array<TextBlockParam | ImageBlockParam> => {
+    const encodeContent = (content: string | ContentPart[]) => {
       if (_.isString(content)) return content;
       return content.map(c => {
         switch (c.type) {
           case 'text':
-            return { type: 'text', text: c.text };
-          case 'image_url':
-            const url = c.image_url.url;
+            return { type: 'text', text: c.text } as const;
+          case 'image':
+            const url = c.image.url;
             const matches = url.match(/^data:([^;]+);base64,(.+)$/);
             if (matches) {
               return {
@@ -70,15 +70,15 @@ export class AnthropicProvider extends ClientProvider {
                   media_type: matches[1] as any,
                   data: matches[2],
                 },
-              };
+              } as const;
             } else {
               return {
                 type: 'image',
                 source: {
                   type: 'url',
-                  url: c.image_url.url,
+                  url: c.image.url,
                 },
-              };
+              } as const;
             }
           default:
             throw new Error(`Unsupported content type: ${(c as any).type}`);
