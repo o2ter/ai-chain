@@ -23,9 +23,10 @@
 //  THE SOFTWARE.
 //
 
+import _ from 'lodash';
 import { RealtimeClientProvider, RealtimeSession } from '../../client/provider';
 import { OpenAIRealtimeWS } from 'openai/realtime/ws';
-import { RealtimeSessionOptions } from '../../client/types';
+import { RealtimeContentPart, RealtimeSessionOptions } from '../../client/types';
 
 type OpenAIRealtimeConfig = {
   apiKey: string;
@@ -76,5 +77,27 @@ class OpenAIRealtimeSession extends RealtimeSession {
 
   close() {
     this.client.close();
+  }
+
+  send(content: string | RealtimeContentPart[]) {
+    this.client.send({
+      type: 'conversation.item.create',
+      item: {
+        type: 'message',
+        role: 'user',
+        content: _.isString(content) ? [{ type: 'input_text', text: content }] : content.map(c => {
+          switch (c.type) {
+            case 'text':
+              return { type: 'input_text', text: c.text } as const;
+            case 'image':
+              return { type: 'input_image', image_url: c.image.url } as const;
+            case 'audio':
+              return { type: 'input_audio', audio: c.audio } as const;
+            default:
+              throw new Error(`Unsupported content type: ${(c as any).type}`);
+          }
+        }),
+      },
+    });
   }
 }

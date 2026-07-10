@@ -107,4 +107,8 @@ export type RealtimeSessionOptions = {
   output: 'text' | 'audio';
   tools?: ChatTool[];
 };
-  
+
+export type RealtimeContentPart =
+  | { type: 'text'; text: string }
+  | { type: 'image'; image: { url: string } }
+  | { type: 'audio'; audio: string };
