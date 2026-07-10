@@ -25,9 +25,9 @@
 
 import { RealtimeClientProvider, RealtimeSession } from '../../client/provider';
 import { OpenAIRealtimeWS } from 'openai/realtime/ws';
+import { RealtimeSessionOptions } from '../../client/types';
 
 type OpenAIRealtimeConfig = {
-  model: string;
   apiKey: string;
   baseURL: string;
 };
@@ -41,8 +41,8 @@ export class OpenAIRealtimeProvider extends RealtimeClientProvider {
     this.config = config;
   };
 
-  session() {
-    return new OpenAIRealtimeSession(this.config);
+  session(options: RealtimeSessionOptions) {
+    return new OpenAIRealtimeSession(this.config, options);
   }
 }
 
@@ -50,13 +50,27 @@ class OpenAIRealtimeSession extends RealtimeSession {
 
   client: OpenAIRealtimeWS;
 
-  constructor(config: OpenAIRealtimeConfig) {
+  constructor(
+    config: OpenAIRealtimeConfig,
+    { 
+      model,
+      systemMessage,
+      output,
+      ...options
+    }: RealtimeSessionOptions,
+  ) {
     super();
-    this.client = new OpenAIRealtimeWS({
-      model: config.model,
-    }, {
-      apiKey: config.apiKey,
-      baseURL: config.baseURL,
+    this.client = new OpenAIRealtimeWS({ model }, config);
+    this.client.socket.on('open', () => {
+      this.client.send({
+        type: 'session.update',
+        session: {
+          ...options,
+          type: 'realtime',
+          instructions: systemMessage,
+          output_modalities: [output],
+        },
+      });
     });
   }
 }

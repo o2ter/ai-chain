@@ -24,7 +24,7 @@
 //
 
 import _ from 'lodash';
-import { ChatOptions, ChatResponseChunk, EmbedOptions, EmbedResponse } from './types';
+import { ChatOptions, ChatResponseChunk, EmbedOptions, EmbedResponse, RealtimeSessionOptions } from './types';
 
 export abstract class ClientProvider {
 
@@ -40,5 +40,5 @@ export abstract class RealtimeSession {
 
 export abstract class RealtimeClientProvider {
 
-  abstract session(): RealtimeSession;
+  abstract session(options: RealtimeSessionOptions): RealtimeSession;
 };

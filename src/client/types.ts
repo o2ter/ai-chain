@@ -100,3 +100,11 @@ export type ChatResponseChunk =
   | { type: 'reasoning'; reasoning: string }
   | { type: 'tool_call'; tool_call_id: string; name?: string; arguments?: string }
   | { type: 'usage'; usage: ChatResponseUsage };
+
+export type RealtimeSessionOptions = {
+  model: string;
+  systemMessage?: string;
+  output: 'text' | 'audio';
+  tools?: ChatTool[];
+};
+  
