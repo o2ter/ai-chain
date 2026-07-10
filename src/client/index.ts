@@ -28,6 +28,7 @@ import { EmbedOptions, ChatOptions } from './types';
 import { AnthropicProvider } from '../providers/anthropic';
 import { OpenAIProvider } from '../providers/openai';
 import { OllamaProvider } from '../providers/ollama';
+import { OpenAIRealtimeProvider } from '../providers/openai/realtime';
 
 const providers = {
   'anthropic': AnthropicProvider,
@@ -58,4 +59,21 @@ export class Client<P extends keyof Providers = any> {
   chat(options: DefaultParameters<Parameters<ProviderInstances[P]['chat']>[0], ChatOptions>) {
     return this.#provider.chat(options as any);
   }
+};
+
+const realtime_providers = {
+  'openai': OpenAIRealtimeProvider,
+} as const;
+
+type RealtimeProviders = typeof realtime_providers;
+type RealtimeProviderInstances = { [x in keyof RealtimeProviders]: InstanceType<RealtimeProviders[x]>; };
+
+export class RealtimeClient<P extends keyof RealtimeProviders = any> { 
+  
+  #provider: RealtimeProviderInstances[P];
+
+  constructor(format: P, options: ConstructorParameters<RealtimeProviders[P]>[0]) {
+    this.#provider = new realtime_providers[format](options as any) as RealtimeProviderInstances[P];
+  }
+
 };

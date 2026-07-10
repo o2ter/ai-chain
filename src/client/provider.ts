@@ -34,3 +34,7 @@ export abstract class ClientProvider {
 
   abstract chat(options: ChatOptions): AsyncGenerator<ChatResponseChunk>;
 };
+
+export abstract class RealtimeClientProvider {
+
+};
