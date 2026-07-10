@@ -73,4 +73,8 @@ class OpenAIRealtimeSession extends RealtimeSession {
       });
     });
   }
+
+  close() {
+    this.client.close();
+  }
 }

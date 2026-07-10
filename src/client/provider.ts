@@ -36,6 +36,8 @@ export abstract class ClientProvider {
 };
 
 export abstract class RealtimeSession {
+
+  abstract close(): void;
 };
 
 export abstract class RealtimeClientProvider {
