@@ -24,7 +24,7 @@
 //
 
 import { RealtimeClientProvider, RealtimeSession } from '../../client/provider';
-import { OpenAIRealtimeWebSocket } from 'openai/realtime/websocket';
+import { OpenAIRealtimeWS } from 'openai/realtime/ws';
 
 type OpenAIRealtimeConfig = {
   model: string;
@@ -48,11 +48,11 @@ export class OpenAIRealtimeProvider extends RealtimeClientProvider {
 
 class OpenAIRealtimeSession extends RealtimeSession {
 
-  client: OpenAIRealtimeWebSocket;
+  client: OpenAIRealtimeWS;
 
   constructor(config: OpenAIRealtimeConfig) {
     super();
-    this.client = new OpenAIRealtimeWebSocket({
+    this.client = new OpenAIRealtimeWS({
       model: config.model,
     }, {
       apiKey: config.apiKey,
