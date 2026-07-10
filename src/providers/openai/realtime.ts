@@ -41,7 +41,7 @@ export class OpenAIRealtimeProvider extends RealtimeClientProvider {
     this.config = config;
   };
 
-  getClient() {
+  session() {
     const client = new OpenAIRealtimeWebSocket({
       model: this.config.model,
     }, {
