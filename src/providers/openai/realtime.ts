@@ -24,7 +24,7 @@
 //
 
 import _ from 'lodash';
-import { RealtimeClientProvider, RealtimeSession } from '../../client/provider';
+import { RealtimeClientProvider, RealtimeSession, RealtimeSessionEvents } from '../../client/provider';
 import { OpenAIRealtimeWS } from 'openai/realtime/ws';
 import { RealtimeContentPart, RealtimeSessionOptions } from '../../client/types';
 
@@ -42,7 +42,7 @@ export class OpenAIRealtimeProvider extends RealtimeClientProvider {
     this.config = config;
   };
 
-  session(options: RealtimeSessionOptions) {
+  session(options: RealtimeSessionOptions & RealtimeSessionEvents) {
     return new OpenAIRealtimeSession(this.config, options);
   }
 }
@@ -57,8 +57,11 @@ class OpenAIRealtimeSession extends RealtimeSession {
       model,
       systemMessage,
       output,
+      onOpen,
+      onClose,
+      onError,
       ...options
-    }: RealtimeSessionOptions,
+    }: RealtimeSessionOptions & RealtimeSessionEvents,
   ) {
     super();
     this.client = new OpenAIRealtimeWS({ model }, config);
@@ -72,6 +75,13 @@ class OpenAIRealtimeSession extends RealtimeSession {
           output_modalities: [output],
         },
       });
+      if (onOpen) onOpen(this);
+    });
+    this.client.on('error', (error) => {
+      if (onError) onError(this, error);
+    });
+    this.client.socket.on('close', () => {
+      if (onClose) onClose(this);
     });
   }
 

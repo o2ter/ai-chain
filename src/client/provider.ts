@@ -42,7 +42,13 @@ export abstract class RealtimeSession {
   abstract send(content: string | RealtimeContentPart[]): void;
 };
 
+export type RealtimeSessionEvents = {
+  onOpen?: (session: RealtimeSession) => void;
+  onClose?: (session: RealtimeSession) => void;
+  onError?: (session: RealtimeSession, error: Error) => void;
+};
+
 export abstract class RealtimeClientProvider {
 
-  abstract session(options: RealtimeSessionOptions): RealtimeSession;
+  abstract session(options: RealtimeSessionOptions & RealtimeSessionEvents): RealtimeSession;
 };
