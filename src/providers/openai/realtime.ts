@@ -77,33 +77,61 @@ class OpenAIRealtimeSession extends RealtimeSession {
       });
       if (onOpen) onOpen(this);
     });
+
+    // 📦 response.created(The entire streaming session starts)
+    // │
+    // └── ✉️ response.output_item.added(A distinct message wrapper or tool block begins)
+    //     │
+    //     ├── ⚙️ Function Call Lifecycle(If the item is a Tool / Function)
+    //     │   ├── ✍️ response.function_call_arguments.delta(Streaming parameters JSON)
+    //     │   └── 🔴 response.function_call_arguments.done(Parameters completely received)
+    //     │
+    //     └── 📦 response.content_part.added(If the item is a Message; opens a specific data track)
+    //         │
+    //         ├── 📝 Text Content Type
+    //         │   ├── ✍️ response.output_text.delta(Streaming raw character tokens)
+    //         │   └── 🔴 response.output_text.done(Text chunk is complete)
+    //         │
+    //         ├── 🎙️ Audio Content Type
+    //         │   ├── 🔊 response.output_audio.delta(Streaming raw Base64 audio bytes)
+    //         │   ├── 🔴 response.output_audio.done(Audio generation is complete)
+    //         │   │
+    //         │   ├── ✍️ response.output_audio_transcript.delta(Simultaneous text transcript text chunks)
+    //         │   └── 🔴 response.output_audio_transcript.done(Transcript text generation is complete)
+    //         │
+    //         └── 🔴 response.content_part.done(The specific data container track closes)
+    //     │
+    //     └── 🔴 response.output_item.done(The entire message wrapper or tool block closes)
+    // │
+    // └── 🔴 response.done(The entire streaming session is finished and sealed)
+
     this.client.on('response.created', (event) => {
     });
-    this.client.on('response.content_part.added', (event) => {
-    });
-    this.client.on('response.content_part.done', (event) => {
-    });
-    this.client.on('response.done', (event) => {
+    this.client.on('response.output_item.added', (event) => {
     });
     this.client.on('response.function_call_arguments.delta', (event) => {
     });
     this.client.on('response.function_call_arguments.done', (event) => {
     });
-    this.client.on('response.output_audio.delta', (event) => {
-    });
-    this.client.on('response.output_audio.done', (event) => {
+    this.client.on('response.content_part.added', (event) => {
     });
     this.client.on('response.output_text.delta', (event) => {
     });
     this.client.on('response.output_text.done', (event) => {
     });
-    this.client.on('response.output_item.added', (event) => {
+    this.client.on('response.output_audio.delta', (event) => {
     });
-    this.client.on('response.output_item.done', (event) => {
+    this.client.on('response.output_audio.done', (event) => {
     });
     this.client.on('response.output_audio_transcript.delta', (event) => {
     });
     this.client.on('response.output_audio_transcript.done', (event) => {
+    });
+    this.client.on('response.content_part.done', (event) => {
+    });
+    this.client.on('response.output_item.done', (event) => {
+    });
+    this.client.on('response.done', (event) => {
     });
     this.client.on('error', (error) => {
       if (onError) onError(this, error);
