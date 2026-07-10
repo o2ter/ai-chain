@@ -77,6 +77,34 @@ class OpenAIRealtimeSession extends RealtimeSession {
       });
       if (onOpen) onOpen(this);
     });
+    this.client.on('response.created', (event) => {
+    });
+    this.client.on('response.content_part.added', (event) => {
+    });
+    this.client.on('response.content_part.done', (event) => {
+    });
+    this.client.on('response.done', (event) => {
+    });
+    this.client.on('response.function_call_arguments.delta', (event) => {
+    });
+    this.client.on('response.function_call_arguments.done', (event) => {
+    });
+    this.client.on('response.output_audio.delta', (event) => {
+    });
+    this.client.on('response.output_audio.done', (event) => {
+    });
+    this.client.on('response.output_text.delta', (event) => {
+    });
+    this.client.on('response.output_text.done', (event) => {
+    });
+    this.client.on('response.output_item.added', (event) => {
+    });
+    this.client.on('response.output_item.done', (event) => {
+    });
+    this.client.on('response.output_audio_transcript.delta', (event) => {
+    });
+    this.client.on('response.output_audio_transcript.done', (event) => {
+    });
     this.client.on('error', (error) => {
       if (onError) onError(this, error);
     });
