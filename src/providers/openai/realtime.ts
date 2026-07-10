@@ -26,21 +26,29 @@
 import { RealtimeClientProvider } from '../../client/provider';
 import { OpenAIRealtimeWebSocket } from 'openai/realtime/websocket';
 
+type OpenAIRealtimeConfig = {
+  model: string;
+  apiKey: string;
+  baseURL: string;
+};
+
 export class OpenAIRealtimeProvider extends RealtimeClientProvider {
 
-  client: OpenAIRealtimeWebSocket;
+  config: OpenAIRealtimeConfig;
 
-  constructor({
-    model,
-    apiKey,
-    baseURL,
-  }: {
-    model: string;
-    apiKey: string;
-    baseURL: string;
-  }) {
+  constructor(config: OpenAIRealtimeConfig) {
     super();
-    this.client = new OpenAIRealtimeWebSocket({ model }, { apiKey, baseURL });
+    this.config = config;
   };
 
+  getClient() {
+    const client = new OpenAIRealtimeWebSocket({
+      model: this.config.model,
+    }, {
+      apiKey: this.config.apiKey,
+      baseURL: this.config.baseURL,
+    });
+
+    return client;
+  }
 }
