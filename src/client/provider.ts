@@ -35,6 +35,10 @@ export abstract class ClientProvider {
   abstract chat(options: ChatOptions): AsyncGenerator<ChatResponseChunk>;
 };
 
+export abstract class RealtimeSession {
+};
+
 export abstract class RealtimeClientProvider {
 
+  abstract session(): RealtimeSession;
 };

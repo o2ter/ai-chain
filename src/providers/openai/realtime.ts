@@ -23,7 +23,7 @@
 //  THE SOFTWARE.
 //
 
-import { RealtimeClientProvider } from '../../client/provider';
+import { RealtimeClientProvider, RealtimeSession } from '../../client/provider';
 import { OpenAIRealtimeWebSocket } from 'openai/realtime/websocket';
 
 type OpenAIRealtimeConfig = {
@@ -42,13 +42,21 @@ export class OpenAIRealtimeProvider extends RealtimeClientProvider {
   };
 
   session() {
-    const client = new OpenAIRealtimeWebSocket({
-      model: this.config.model,
-    }, {
-      apiKey: this.config.apiKey,
-      baseURL: this.config.baseURL,
-    });
+    return new OpenAIRealtimeSession(this.config);
+  }
+}
 
-    return client;
+class OpenAIRealtimeSession extends RealtimeSession {
+
+  client: OpenAIRealtimeWebSocket;
+
+  constructor(config: OpenAIRealtimeConfig) {
+    super();
+    this.client = new OpenAIRealtimeWebSocket({
+      model: config.model,
+    }, {
+      apiKey: config.apiKey,
+      baseURL: config.baseURL,
+    });
   }
 }
