@@ -24,9 +24,9 @@
 //
 
 import _ from 'lodash';
-import { RealtimeClientProvider, RealtimeSession, RealtimeSessionEvents } from '../../client/provider';
+import { RealtimeClientProvider, RealtimeSession, _RealtimeSessionOptions } from '../../client/provider';
 import { OpenAIRealtimeWS } from 'openai/realtime/ws';
-import { RealtimeContentPart, RealtimeSessionOptions } from '../../client/types';
+import { RealtimeContentPart } from '../../client/types';
 
 type OpenAIRealtimeConfig = {
   apiKey: string;
@@ -42,7 +42,7 @@ export class OpenAIRealtimeProvider extends RealtimeClientProvider {
     this.config = config;
   };
 
-  session(options: RealtimeSessionOptions & RealtimeSessionEvents) {
+  session(options: _RealtimeSessionOptions) {
     return new OpenAIRealtimeSession(this.config, options);
   }
 }
@@ -61,7 +61,7 @@ class OpenAIRealtimeSession extends RealtimeSession {
       onClose,
       onError,
       ...options
-    }: RealtimeSessionOptions & RealtimeSessionEvents,
+    }: _RealtimeSessionOptions,
   ) {
     super();
     this.client = new OpenAIRealtimeWS({ model }, config);

@@ -48,7 +48,9 @@ export type RealtimeSessionEvents = {
   onError?: (session: RealtimeSession, error: Error) => void;
 };
 
+export type _RealtimeSessionOptions = RealtimeSessionOptions & RealtimeSessionEvents;
+
 export abstract class RealtimeClientProvider {
 
-  abstract session(options: RealtimeSessionOptions & RealtimeSessionEvents): RealtimeSession;
+  abstract session(options: _RealtimeSessionOptions): RealtimeSession;
 };
