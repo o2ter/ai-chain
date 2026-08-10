@@ -199,10 +199,9 @@ export class AnthropicProvider extends ClientProvider {
       yield {
         type: 'usage',
         usage: {
-          completion_tokens: usage.output_tokens,
           prompt_tokens: usage.input_tokens ?? 0,
-          total_tokens: (usage.input_tokens ?? 0) + usage.output_tokens,
           cached_tokens: usage.cache_read_input_tokens ?? undefined,
+          completion_tokens: usage.output_tokens,
         },
       } as const;
     }

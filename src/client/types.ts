@@ -88,11 +88,10 @@ export type ChatOptions = {
 };
 
 export type ChatResponseUsage = {
-  completion_tokens?: number;
   prompt_tokens?: number;
-  total_tokens?: number;
-  reasoning_tokens?: number;
   cached_tokens?: number;
+  reasoning_tokens?: number;
+  completion_tokens?: number;
 };
 
 export type ChatResponseChunk =

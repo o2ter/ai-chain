@@ -161,11 +161,10 @@ export class OpenAIProvider extends ClientProvider {
       }
       if (_usage) {
         usage = {
-          completion_tokens: _usage.completion_tokens,
           prompt_tokens: _usage.prompt_tokens,
-          total_tokens: _usage.total_tokens,
-          reasoning_tokens: _usage.completion_tokens_details?.reasoning_tokens,
           cached_tokens: _usage.prompt_tokens_details?.cached_tokens,
+          reasoning_tokens: _usage.completion_tokens_details?.reasoning_tokens,
+          completion_tokens: _usage.completion_tokens,
         };
       }
     }

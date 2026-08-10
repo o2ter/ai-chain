@@ -174,7 +174,6 @@ export class OllamaProvider extends ClientProvider {
         usage = {
           prompt_tokens: data.prompt_eval_count,
           completion_tokens: data.eval_count,
-          total_tokens: (data.prompt_eval_count ?? 0) + (data.eval_count ?? 0),
         };
       }
     }
